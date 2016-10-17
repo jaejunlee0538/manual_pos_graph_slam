@@ -1,12 +1,17 @@
 #include "cloudviewer.h"
 #include "manipulatedframesetconstraint.h"
 #include <QMouseEvent>
-
+#include "standardcamera.h"
 void CloudViewer::init(){
     setManipulatedFrame(new qglviewer::ManipulatedFrame());
     manipulatedFrame()->setConstraint(new ManipulatedFrameSetConstraint());
 
     glBlendFunc(GL_ONE, GL_ONE);
+
+    qglviewer::Camera* old_cam = camera();
+    qglviewer::Camera* new_cam = new StandardCamera();
+    setCamera(new_cam);
+    delete old_cam;
     setGridIsDrawn();
     //    setAxisIsDrawn();
     setFPSIsDisplayed();
@@ -69,20 +74,23 @@ void CloudViewer::mousePressEvent(QMouseEvent *e)
     // Start selection. Mode is ADD with Shift key and TOGGLE with Alt key.
     rectangle = QRect(e->pos(), e->pos());
     if(e->button() == Qt::LeftButton){
-        if(e->modifiers()&Qt::ShiftModifier){
-            if(e->modifiers() & Qt::ControlModifier){
-                selection_mode = REMOVE;
-                return;
-            }else{
-                selection_mode = ADD;
-                return;
-            }
-        }else{
-            if(e->modifiers() == Qt::ControlModifier){
-                startManipulation();
-            }
+        switch(e->modifiers()){
+        case Qt::ShiftModifier|Qt::ControlModifier:
+            selection_mode = REMOVE;
+            return;
+        case Qt::ShiftModifier:
+            selection_mode = ADD;
+            return;
+        case Qt::ControlModifier:
+            startManipulation();//Rotation.
+            break;
         }
-    }else{
+    }else if(e->button()==Qt::RightButton){
+        switch(e->modifiers()){
+        case Qt::ControlModifier:
+            startManipulation();//Translation
+            break;
+        }
     }
     QGLViewer::mousePressEvent(e);
 }

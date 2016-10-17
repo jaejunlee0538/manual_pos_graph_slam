@@ -11,7 +11,7 @@ public:
 
     virtual void constrainTranslation(qglviewer::Vec& tr, qglviewer::Frame* const frame);
 
-    virtual void constraintRotation(qglviewer::Quaternion& quat, qglviewer::Frame* const frame);
+    virtual void constrainRotation(qglviewer::Quaternion& quat, qglviewer::Frame* const frame);
 private:
     typedef QSet<qglviewer::Frame*> FrameContainer;
     FrameContainer frames;

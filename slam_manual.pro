@@ -32,7 +32,8 @@ SOURCES += main.cpp\
     graphslam.cpp \
     Global.cpp \
     manipulatedframesetconstraint.cpp \
-    graphhelper.cpp
+    graphhelper.cpp \
+    standardcamera.cpp
 
 HEADERS  += mainwindow.h \
     cloudviewer.h\
@@ -45,7 +46,8 @@ HEADERS  += mainwindow.h \
     LoggerQEditBox.h \
     Global.h \
     manipulatedframesetconstraint.h \
-    graphhelper.h
+    graphhelper.h \
+    standardcamera.h
 
 unix {
 #        CONFIG -= debug debug_and_release

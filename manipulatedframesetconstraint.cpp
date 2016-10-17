@@ -15,7 +15,7 @@ void ManipulatedFrameSetConstraint::constrainTranslation(qglviewer::Vec &tr, qgl
     }
 }
 
-void ManipulatedFrameSetConstraint::constraintRotation(qglviewer::Quaternion &quat, qglviewer::Frame * const frame){
+void ManipulatedFrameSetConstraint::constrainRotation(qglviewer::Quaternion &quat, qglviewer::Frame * const frame){
 
         std::cerr<<"constraintRotation : "<<quat<<std::endl;
     const qglviewer::Vec world = frame->inverseTransformOf(quat.axis());
