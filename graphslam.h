@@ -11,6 +11,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include "graphhelper.h"
+#include "graphtablemodel.h"
 namespace g2o{
 class SparseOptimizer;
 }
@@ -32,20 +33,20 @@ public:
     size_t nVertices() const{
         return m_vertices.size();
     }
+
     size_t nEdges() const{
         return m_loop_edges.size() + m_motion_edges.size();
     }
 
     void init();
+    void sendGraph();
+    void sendPointCloud();
 
+public Q_SLOTS:
     void reset();
-
-    void optimize(const int& n_iterations);
-
-    bool setScanData(const int& vertex_id);
-
+    void resetLoopClosings();
+    bool optimize(const int& n_iterations);
     bool loadFromG2OFile(const std::string &file_name);
-
     bool setVertexFixed(const int& id, const bool& fixed=true);
 
     /*
@@ -58,34 +59,30 @@ public:
      */
     bool addEdgeFromVertices(const int& vi, const int& vj, const g2o::EdgeSE3::InformationType& info_mat);
 
-    void sendGraph();
-    void sendPointCloud();
+    bool addLoopClosing(const int& vi, const int& vj, const PosTypes::Pose3D& data ,const g2o::EdgeSE3::InformationType& info_mat);
+
+    void removeEdge(g2o::EdgeSE3* e);
+    void removeEdges(QList<g2o::EdgeSE3*> es);
 
 Q_SIGNALS:
     void graphUpdated(GraphDisplayer::Ptr graph);
+    void graphUpdated2(EdgeTableModel::Ptr graph_table_model);
     void pointCloudsUpdated(QVector<PointCloudDisplayer::Ptr> clouds);
     void showMessage(QString msg);
 
 public Q_SLOTS:
-    void slot_searchLoopClosings(std::vector<int> idx_old,
-                                 std::vector<int> idx_new,
+    void slot_searchLoopClosings(QVector<int> idx_old,
+                                 QVector<int> idx_new,
                                  PosTypes::Pose3D tr_new);
     void slot_startOptimize(int max_iterations);
 
 protected:
-    /*
-     * idx_old와 idx_new의 인덱스를 가지는 노드들을 사이의 Loop Closing을 찾는다.
-     * Loop Closing을 찾기 전에 idx_new에 해당하는 노드들을 tr_new만큼 transformation시킨다.
-     */
-    void searchLoopClosing(const std::vector<int>& idx_old,
-                           const std::vector<int>& idx_new,
-                           const PosTypes::Pose3D& tr_new);
 
     std::shared_ptr<g2o::SparseOptimizer> m_g2o_graph;
     QVector<g2o::VertexSE3*> m_vertices;
     QVector<ScanDataType::Ptr> m_scan_data;//indices must conincide with the indices of m_vertices.
     QVector<g2o::EdgeSE3*> m_motion_edges;
-    QVector<g2o::EdgeSE3*> m_loop_edges;
+    QList<g2o::EdgeSE3*> m_loop_edges;
 };
 
 #endif // GRAPHSLAM_H

@@ -40,10 +40,11 @@ public:
     void drawLoopEdges();
     void drawMotionEdges();
     void reset();
+    const QVector<EdgeDisplayType>& loop_edges()const {return m_loop_edges;}
 protected:
-    std::vector<VertexDisplayType> m_vertices;
-    std::vector<EdgeDisplayType> m_loop_edges;
-    std::vector<EdgeDisplayType> m_motion_edges;
+    QVector<VertexDisplayType> m_vertices;
+    QVector<EdgeDisplayType> m_loop_edges;
+    QVector<EdgeDisplayType> m_motion_edges;
 
     friend class GraphSLAM;
 };

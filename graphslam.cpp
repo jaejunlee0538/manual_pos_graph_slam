@@ -43,9 +43,24 @@ void GraphSLAM::reset()
     m_scan_data.clear();
 }
 
-void GraphSLAM::optimize(const int &n_iterations)
+void GraphSLAM::resetLoopClosings()
 {
+    for(size_t i=0;i<m_loop_edges.size();i++){
+        m_g2o_graph->removeEdge(m_loop_edges[i]);
+    }
+    m_loop_edges.clear();
+}
 
+bool GraphSLAM::optimize(const int &n_iterations)
+{
+    logger->logMessage("Start graph optimization. Please wait...");
+    if(!m_g2o_graph->initializeOptimization()){
+        logger->logMessage("Initialization failed.");
+        return false;
+    }
+    m_g2o_graph->optimize(n_iterations);
+    logger->logMessage("Optimization done.");
+    return true;
 }
 
 bool GraphSLAM::loadFromG2OFile(const std::string &file_name)
@@ -64,10 +79,12 @@ bool GraphSLAM::setVertexFixed(const int &id, const bool &fixed)
 {
     if(id < m_vertices.size()){
         m_vertices[id]->setFixed(fixed);
+        logger->logMessage(QString("Set vertex(%1) fixed.").arg(id).toStdString().c_str());
     }else{
         logger->logMessage("Index is out of range(GraphSLAM::setVertexFixed)");
     }
 }
+
 
 bool GraphSLAM::addVertex(const PosTypes::Pose3D &p, ScanDataType::Ptr cloud_ptr, const bool &incremental)
 {
@@ -105,9 +122,40 @@ bool GraphSLAM::addEdgeFromVertices(const int &vi, const int &vj,
     return true;
 }
 
+bool GraphSLAM::addLoopClosing(const int &vi, const int &vj,
+                        const PosTypes::Pose3D &data, const g2o::EdgeSE3::InformationType &info_mat)
+{
+    EdgeType* e = GraphHelper::createEdgeSE3(m_g2o_graph->edges().size(), m_vertices[vi], m_vertices[vj], data, info_mat);
+    m_g2o_graph->addEdge(e);
+    if(abs(vi - vj) == 1){
+        throw std::runtime_error("This is not a loop closing edge.");
+    }else{
+        m_loop_edges.push_back(e);
+    }
+    this->sendGraph();
+    return true;
+}
+
+void GraphSLAM::removeEdge(g2o::EdgeSE3 *e)
+{
+    m_g2o_graph->removeEdge(e);
+    m_loop_edges.removeOne(e);
+    this->sendGraph();
+}
+
+void GraphSLAM::removeEdges(QList<g2o::EdgeSE3 *> es)
+{
+    for(size_t i=0;i<es.size();i++){
+        m_g2o_graph->removeEdge(es[i]);
+        m_loop_edges.removeOne(es[i]);
+    }
+    this->sendGraph();
+}
+
 void GraphSLAM::sendGraph()
 {
     GraphDisplayer::Ptr graph_disp(new GraphDisplayer());
+
     graph_disp->m_vertices.resize(m_vertices.size());
     for(size_t i=0; i<m_vertices.size();i++){
         GraphHelper::convertSE3To4x4Matrix(
@@ -115,12 +163,14 @@ void GraphSLAM::sendGraph()
                     &(graph_disp->m_vertices[i].m[0]));
     }
 
+    EdgeTableModel::Ptr loop_edge_table(new EdgeTableModel());
     graph_disp->m_loop_edges.reserve(m_loop_edges.size());
     for(size_t i=0; i<m_loop_edges.size();i++){
         graph_disp->m_loop_edges.push_back(
                     GraphDisplayer::EdgeDisplayType(
                         m_loop_edges[i]->vertex(0)->id(),
                         m_loop_edges[i]->vertex(1)->id()));
+        loop_edge_table->pushBack(m_loop_edges[i]);
     }
 
     graph_disp->m_motion_edges.reserve(m_motion_edges.size());
@@ -132,6 +182,7 @@ void GraphSLAM::sendGraph()
     }
 
     Q_EMIT graphUpdated(graph_disp);
+    Q_EMIT graphUpdated2(loop_edge_table);
 }
 
 void GraphSLAM::sendPointCloud()
@@ -163,7 +214,8 @@ void GraphSLAM::sendPointCloud()
     Q_EMIT pointCloudsUpdated(cloud_out);
 }
 
-void GraphSLAM::slot_searchLoopClosings(std::vector<int> idx_old, std::vector<int> idx_new, PosTypes::Pose3D tr_new)
+void GraphSLAM::slot_searchLoopClosings(QVector<int> idx_old, QVector<int> idx_new,
+                                        PosTypes::Pose3D tr_new)
 {
 
 }
@@ -172,11 +224,5 @@ void GraphSLAM::slot_startOptimize(int max_iterations)
 {
 
 }
-
-void GraphSLAM::searchLoopClosing(const std::vector<int> &idx_old, const std::vector<int> &idx_new, const PosTypes::Pose3D &tr_new)
-{
-
-}
-
 
 

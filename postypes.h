@@ -24,6 +24,12 @@ struct Pose2D{
 };
 
 struct Pose3D{
+    Pose3D(){
+        quat.x =quat.y=quat.z= 0.0;
+        quat.z = 1.0;
+        xyz.x = xyz.y = xyz.z = 0.0;
+    }
+
     Pose3D(const double& x, const double& y, const double& z,
            const double& qx, const double& qy, const double& qz, const double& qw ){
         xyz.x = x;

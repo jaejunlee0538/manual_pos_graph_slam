@@ -6,7 +6,7 @@
 #include <fstream>
 #include <sstream>
 #include <pcl/io/pcd_io.h>
-
+#include <QTableView>
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -26,6 +26,16 @@ void MainWindow::init()
                      ui->widget_CloudViewer, SLOT(setGraphDisplayer(GraphDisplayer::Ptr)));
     QObject::connect(&graph_slam, SIGNAL(pointCloudsUpdated(QVector<PointCloudDisplayer::Ptr>)),
                      ui->widget_CloudViewer, SLOT(setPointCloudDisplayers(QVector<PointCloudDisplayer::Ptr>)));
+    QObject::connect(this->ui->pushButton_ManualLoopClosing, SIGNAL(clicked()),
+                     this->ui->widget_CloudViewer, SLOT(slot_manualLoopClosing()));
+    QObject::connect(this->ui->widget_CloudViewer, SIGNAL(loopClosingAdded(int,int,PosTypes::Pose3D,g2o::EdgeSE3::InformationType)),
+                     &graph_slam, SLOT(addLoopClosing(int,int,PosTypes::Pose3D,g2o::EdgeSE3::InformationType)));
+    QObject::connect(this->ui->doubleSpinBox_AlphaPointCloud, SIGNAL(valueChanged(double)),
+                     this->ui->widget_CloudViewer, SLOT(slot_setPointAlpha(double)));
+    QObject::connect(this->ui->doubleSpinBox_PointSize, SIGNAL(valueChanged(double)),
+                     this->ui->widget_CloudViewer, SLOT(slot_setPointSize(double)));
+    QObject::connect(&graph_slam, SIGNAL(graphUpdated2(EdgeTableModel::Ptr)),
+                     this, SLOT(slot_updateGraph(EdgeTableModel::Ptr)));
 }
 
 void MainWindow::loadGraphFromPCDDatabase(const QDir &db_dir)
@@ -42,13 +52,15 @@ void MainWindow::loadGraphFromPCDDatabase(const QDir &db_dir)
     int id1, id2;
     double dx, dy, dz, qw, qx, qy, qz;
     GraphSLAM::InformationType info = GraphSLAM::InformationType::Identity();
+    info(0,0) = info(1,1)  = 100.0;
+    info(2,2) = 100.0;
 
-    pcl::PCDReader reader;
+    info(3,3) =1000.0;
+    info(4,4) =1000.0;
+    info(5,5) =50;
+
     size_t cnt = 0;
     for(std::string line; std::getline(file, line);cnt++){
-        if(cnt >= 20){
-            break;
-        }
         std::stringstream str(line);
         str >> id1;        str >> id2;
         str >> dx;         str >> dy;        str >> dz;
@@ -89,6 +101,16 @@ void MainWindow::appendMessage(QString msg)
     ui->plainTextEdit_Message->appendPlainText(msg+"\n");
 }
 
+void MainWindow::setSelections(GraphSelectionInfo info)
+{
+    this->selection_info = info;
+}
+
+void MainWindow::slot_updateGraph(EdgeTableModel::Ptr graph){
+    ui->tableView_LoopEdges->setModel(graph.get());
+    loop_table_model = graph;//To prevent shared_ptr destroy the item.
+}
+
 void MainWindow::on_action_File_Open_triggered()
 {
     //    QFileDialog file_dlg(this, "Open Database","");
@@ -114,7 +136,12 @@ void MainWindow::on_action_File_Open_triggered()
 
 void MainWindow::on_pushButton_Optimize_clicked()
 {
-
+    graph_slam.init();
+    if(!graph_slam.optimize(100)){
+        return;
+    }
+    graph_slam.sendGraph();
+    graph_slam.sendPointCloud();
 }
 
 void MainWindow::on_pushButton_Reset_clicked()
@@ -122,7 +149,32 @@ void MainWindow::on_pushButton_Reset_clicked()
 
 }
 
-void MainWindow::on_pushButton_SearchLoopClosings_clicked()
+void MainWindow::on_pushButton_ClearLoopClosings_clicked()
+{
+    graph_slam.resetLoopClosings();
+}
+
+void MainWindow::on_pushButton_ApplyInfoMatrix_clicked()
 {
 
+}
+
+void MainWindow::on_pushButton_DeleteLoopEdge_clicked()
+{
+
+}
+
+
+void MainWindow::on_pushButton_DeleteSelectedLoopClosings_clicked()
+{
+    QModelIndexList selected_row = ui->tableView_LoopEdges->selectionModel()->selectedRows();
+    if(selected_row.empty()){
+        return;
+    }
+    QList<g2o::EdgeSE3*> edges;
+    for(size_t i=0;i<selected_row.size();i++){
+        //        std::cerr<<selected_row[i].row()<<std::endl;
+        edges.push_back(this->loop_table_model->at(selected_row[i].row()));
+    }
+    graph_slam.removeEdges(edges);
 }

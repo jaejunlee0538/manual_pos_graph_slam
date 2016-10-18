@@ -14,14 +14,14 @@ TARGET = abc
 
 TEMPLATE = app
 
-G2O_INSTALL_PATH = $$PWD/Externals/g2o/install
+EXTERNALS_PATH = $$PWD/Externals/install
 EIGEN_INSTALL_PATH = /usr/include/eigen3
 
 
 INCLUDEPATH += "/usr/local/include"
 INCLUDEPATH += "/usr/include/pcl-1.7"
 INCLUDEPATH += "/usr/include/suitesparse"
-INCLUDEPATH += $$G2O_INSTALL_PATH/include
+INCLUDEPATH += $$EXTERNALS_PATH/include
 INCLUDEPATH += $$EIGEN_INSTALL_PATH
 
 SOURCES += main.cpp\
@@ -33,7 +33,13 @@ SOURCES += main.cpp\
     Global.cpp \
     manipulatedframesetconstraint.cpp \
     graphhelper.cpp \
-    standardcamera.cpp
+    standardcamera.cpp \
+    icpdialog.cpp \
+    QGLHelper.cpp \
+    matrixtextedit.cpp \
+    selectioninfo.cpp \
+    textdrawhelper.cpp \
+    graphtablemodel.cpp
 
 HEADERS  += mainwindow.h \
     cloudviewer.h\
@@ -47,7 +53,13 @@ HEADERS  += mainwindow.h \
     Global.h \
     manipulatedframesetconstraint.h \
     graphhelper.h \
-    standardcamera.h
+    standardcamera.h \
+    icpdialog.h \
+    QGLHelper.h \
+    matrixtextedit.h \
+    selectioninfo.h \
+    textdrawhelper.h \
+    graphtablemodel.h
 
 unix {
 #        CONFIG -= debug debug_and_release
@@ -65,13 +77,14 @@ unix {
         MOC_DIR = .moc
         OBJECTS_DIR = .obj
 }
+QMAKE_CXXFLAGS += -fopenmp
 
-
-LIBS += -L$$G2O_INSTALL_PATH/lib
+LIBS += -L$$EXTERNALS_PATH/lib
 LIBS += -lg2o_types_data -lg2o_types_slam2d -lg2o_types_slam3d -lg2o_types_slam3d_addons -lg2o_solver_pcg -lg2o_solver_dense -lg2o_solver_cholmod -lg2o_solver_csparse -lg2o_csparse_extension -lg2o_core -lg2o_stuff -lg2o_opengl_helper -lg2o_ext_freeglut_minimal
 LIBS += -lGLU
 LIBS += -lcxsparse
 LIBS += -lpcl_common -lpcl_io
 LIBS += -L/usr/lib/x86_64-linux-gnu -lboost_system
-
-FORMS    += mainwindow.ui
+LIBS += -licplib -fopenmp
+FORMS    += mainwindow.ui \
+    icpdialog.ui

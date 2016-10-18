@@ -1,0 +1,2 @@
+/home/ub1404/slam_manual/Externals/libicp/build/CMakeFiles/demo.dir
+/home/ub1404/slam_manual/Externals/libicp/build/CMakeFiles/icplib.dir

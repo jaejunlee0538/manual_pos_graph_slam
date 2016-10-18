@@ -12,16 +12,30 @@ public:
     typedef std::vector<GLfloat> CloudDataType;
 public:
     PointCloudDisplayer();
-
+    void setSelectable(bool selectable=true){
+        this->selectable=selectable;
+    }
+    bool isSelectable()const {return selectable;}
     void drawPointCloud(const bool& selected,
-                        const double& pointSize,
-                        const double& alpha);
+                        const GLfloat& pointSize,
+                        const GLdouble& alpha);
     void drawFrame(const bool& selected);
 
+
+    void copyXYZTo(std::vector<double>& output);
+    void pushBack(const CloudDataType& p);
+    CloudDataType getPoint(size_t i) const;
+    size_t nPoints() const;
+
+//    size_t n_points;
     qglviewer::Frame frame;
     CloudDataType data;
     int start;//index of the beginning of xyz fields.
     std::vector<std::string> fields;//how many fields does a point have?
+    bool selectable;
+protected:
+
 };
+
 
 #endif // POINTCLOUDDISPLAYER_H

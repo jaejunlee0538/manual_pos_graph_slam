@@ -3,6 +3,13 @@
 #include "graphslam.h"
 #include "LoggerQEditBox.h"
 #include "Global.h"
+#include <QGLViewer/frame.h>
+#include <QGLHelper.h>
+void printFrame(qglviewer::Frame& f){
+    std::cerr<<f.orientation()<<std::endl;
+    std::cerr<<f.position()<<std::endl;
+}
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
