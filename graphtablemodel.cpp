@@ -46,7 +46,7 @@ int EdgeTableModel::columnCount(const QModelIndex &parent) const
 
 QVariant EdgeTableModel::data(const QModelIndex &index, int role) const
 {
-    if(role == Qt::DisplayRole){
+    if(role == Qt::DisplayRole || role == Qt::EditRole){
         const g2o::EdgeSE3* edge = bin_edges[index.row()];
         switch(index.column()){
         case 0:                 return QVariant(edge->id());
@@ -89,4 +89,25 @@ QVariant EdgeTableModel::headerData(int section, Qt::Orientation orientation, in
         return QVariant();
     }
     return QVariant();
+}
+
+Qt::ItemFlags EdgeTableModel::flags(const QModelIndex &index) const
+{
+    if(!index.isValid()){
+        return Qt::ItemIsEnabled;
+    }
+    switch(index.column()){
+    case 4:
+        return QAbstractItemModel::flags(index) | Qt::ItemIsEditable;
+    }
+    return QAbstractItemModel::flags(index);
+}
+
+bool EdgeTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
+{
+    if(index.isValid() && role==Qt::EditRole){
+
+        return true;
+    }
+    return false;
 }

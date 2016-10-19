@@ -112,23 +112,16 @@ void CloudViewer::slot_setPointSize(const double &point_size){
 
 
 void CloudViewer::init(){
-    constraints[0] = new LocalManipulatedFrameSetConstraint();
-    constraints[1] = new WorldManipulatedFrameSetConstraint();
-    translation_dir = 0;
-    rotation_dir = 0;
-    active_constraint = 0;
-    constraint_info_text.setOffset(50, 20);
-    constraint_info_text.setViewer(this);
+    initConstraint();
 
     this->size_points = 1.0;
     this->alpha_points = 1.0;
-    setManipulatedFrame(new qglviewer::ManipulatedFrame());
-    manipulatedFrame()->setConstraint(constraints[active_constraint]);
 
     glBlendFunc(GL_ONE, GL_ONE);
 
     qglviewer::Camera* old_cam = camera();
     qglviewer::Camera* new_cam = new StandardCamera();
+    new_cam->setPosition(qglviewer::Vec(0,0,100));
     setCamera(new_cam);
     delete old_cam;
     setGridIsDrawn();
@@ -286,7 +279,7 @@ void CloudViewer::startManipulation()
         if(Wmfsc){
             mfs = Wmfsc;
         }else{
-             throw std::runtime_error("Cannot dynamic_cast constraint into Local or World constraint.");
+            throw std::runtime_error("Cannot dynamic_cast constraint into Local or World constraint.");
         }
     }
 
@@ -406,6 +399,27 @@ void CloudViewer::drawText()
     glEnable(GL_LIGHTING);
 }
 
+void CloudViewer::initConstraint()
+{
+    constraints[0] = new LocalManipulatedFrameSetConstraint();
+    constraints[1] = new WorldManipulatedFrameSetConstraint();
+    translation_dir = 2;
+    rotation_dir = 2;
+    active_constraint = 0;
+    qglviewer::Vec vec_tr(0,0,0), vec_rot(0,0,0);
+    vec_tr[translation_dir] = 1.0;
+    vec_rot[rotation_dir] = 1.0;
+    constraints[active_constraint]->setRotationConstraintType(AxisPlaneConstraint::AXIS);
+    constraints[active_constraint]->setTranslationConstraintType(AxisPlaneConstraint::PLANE);
+    constraints[active_constraint]->setRotationConstraintDirection(vec_rot);
+    constraints[active_constraint]->setTranslationConstraintDirection(vec_tr);
+    constraint_info_text.setOffset(50, 20);
+    constraint_info_text.setViewer(this);
+
+    setManipulatedFrame(new qglviewer::ManipulatedFrame());
+    manipulatedFrame()->setConstraint(constraints[active_constraint]);
+}
+
 void CloudViewer::switchTranslationConstraintType()
 {
     AxisPlaneConstraint::Type type= constraints[active_constraint]->translationConstraintType();
@@ -465,7 +479,7 @@ void CloudViewer::switchConstraintDirection(bool rotation)
         constraints[active_constraint]->setRotationConstraintDirection(dir);
     }else{
         translation_dir = (translation_dir+1)%3;
-        dir[rotation_dir] = 1.0;
+        dir[translation_dir] = 1.0;
         constraints[active_constraint]->setTranslationConstraintDirection(dir);
     }
 }

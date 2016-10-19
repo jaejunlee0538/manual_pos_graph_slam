@@ -61,6 +61,7 @@ protected:
     void drawText();
 
     //Frame constraints functions.
+    void initConstraint();
     void switchTranslationConstraintType();
     void switchRotationConstraintType();
     void switchConstraint();

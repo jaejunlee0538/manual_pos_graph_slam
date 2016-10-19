@@ -39,7 +39,8 @@ SOURCES += main.cpp\
     matrixtextedit.cpp \
     selectioninfo.cpp \
     textdrawhelper.cpp \
-    graphtablemodel.cpp
+    graphtablemodel.cpp \
+    graphtabledialog.cpp
 
 HEADERS  += mainwindow.h \
     cloudviewer.h\
@@ -59,7 +60,8 @@ HEADERS  += mainwindow.h \
     matrixtextedit.h \
     selectioninfo.h \
     textdrawhelper.h \
-    graphtablemodel.h
+    graphtablemodel.h \
+    graphtabledialog.h
 
 unix {
 #        CONFIG -= debug debug_and_release
@@ -87,4 +89,5 @@ LIBS += -lpcl_common -lpcl_io
 LIBS += -L/usr/lib/x86_64-linux-gnu -lboost_system
 LIBS += -licplib -fopenmp
 FORMS    += mainwindow.ui \
-    icpdialog.ui
+    icpdialog.ui \
+    graphtabledialog.ui

@@ -36,6 +36,10 @@ void MainWindow::init()
                      this->ui->widget_CloudViewer, SLOT(slot_setPointSize(double)));
     QObject::connect(&graph_slam, SIGNAL(graphUpdated2(EdgeTableModel::Ptr)),
                      this, SLOT(slot_updateGraph(EdgeTableModel::Ptr)));
+
+    loop_table_model.reset(new EdgeTableModel());
+    this->ui->tableView_LoopEdges->setModel(loop_table_model.get());
+    ui->tableView_LoopEdges->setColumnWidth(3, 150);
 }
 
 void MainWindow::loadGraphFromPCDDatabase(const QDir &db_dir)
