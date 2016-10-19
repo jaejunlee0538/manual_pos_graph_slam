@@ -9,7 +9,8 @@
 #include <QTableView>
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    graph_table_dialog(NULL)
 {
     ui->setupUi(this);
 }
@@ -95,6 +96,11 @@ void MainWindow::loadGraphFromPCDDatabase(const QDir &db_dir)
     }
 }
 
+void MainWindow::loadGraphFromG2ODatabase(const QDir &db_dir)
+{
+
+}
+
 void MainWindow::resetMessage()
 {
     ui->plainTextEdit_Message->clear();
@@ -102,7 +108,7 @@ void MainWindow::resetMessage()
 
 void MainWindow::appendMessage(QString msg)
 {
-    ui->plainTextEdit_Message->appendPlainText(msg+"\n");
+    ui->plainTextEdit_Message->appendPlainText(msg);
 }
 
 void MainWindow::setSelections(GraphSelectionInfo info)
@@ -115,6 +121,14 @@ void MainWindow::slot_updateGraph(EdgeTableModel::Ptr graph){
     loop_table_model = graph;//To prevent shared_ptr destroy the item.
 }
 
+void MainWindow::slot_edgesTableDialogClosed()
+{
+    logger->logMessage("Graph Edge Dialog closed");
+    QObject::disconnect(graph_table_dialog, SIGNAL(destroyed()),
+                     this,SLOT(slot_edgesTableDialogClosed()));
+    this->graph_table_dialog = NULL;
+}
+
 void MainWindow::on_action_File_Open_triggered()
 {
     //    QFileDialog file_dlg(this, "Open Database","");
@@ -122,7 +136,8 @@ void MainWindow::on_action_File_Open_triggered()
     //    file_dlg.setModal(true);
     //    if(file_dlg.exec()){
     //        QDir db = file_dlg.directory();
-    QDir db("/home/ub1404/Incheon");
+
+    QDir db(QDir::homePath()+"/manual_slam_db");
     try{
         loadGraphFromPCDDatabase(db);
     }
@@ -168,7 +183,6 @@ void MainWindow::on_pushButton_DeleteLoopEdge_clicked()
 
 }
 
-
 void MainWindow::on_pushButton_DeleteSelectedLoopClosings_clicked()
 {
     QModelIndexList selected_row = ui->tableView_LoopEdges->selectionModel()->selectedRows();
@@ -181,4 +195,45 @@ void MainWindow::on_pushButton_DeleteSelectedLoopClosings_clicked()
         edges.push_back(this->loop_table_model->at(selected_row[i].row()));
     }
     graph_slam.removeEdges(edges);
+}
+
+void MainWindow::on_action_Save_As_G2O_triggered()
+{
+    logger->logMessage("Saving as g2o");
+    //TODO
+}
+
+void MainWindow::on_action_Edges_Table_triggered()
+{
+    if(graph_table_dialog){
+        return;
+    }
+     logger->logMessage("Opening Edge Table Dialog");
+    graph_table_dialog = new GraphTableDialog(this);
+    graph_table_dialog->setModal(false);
+    QObject::connect(graph_table_dialog, SIGNAL(destroyed()),
+                     this,SLOT(slot_edgesTableDialogClosed()));
+    graph_table_dialog->show();
+}
+
+void MainWindow::on_action_Open_From_G2O_triggered()
+{
+    QDir db(QDir::homePath()+"/manual_slam_db");
+    try{
+        graph_slam.loadFromG2ODB(db);
+    }
+    catch(PathNotExist& e){
+        logger->logMessage(e.what());
+        return;
+    }
+    catch(std::runtime_error& e){
+        logger->logMessage(e.what());
+        return;
+    }
+
+    std::ostringstream oss;
+    oss<<graph_slam.nVertices()<<" vertices and "<<graph_slam.nEdges()<<" edges are lodaed.";
+    logger->logMessage(oss.str().c_str());
+    graph_slam.sendGraph();
+    graph_slam.sendPointCloud();
 }

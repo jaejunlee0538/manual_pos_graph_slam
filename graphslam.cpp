@@ -9,9 +9,15 @@
 #include <string>
 #include <pcl/PCLPointField.h>
 #include <pcl/common/common.h>
-
-
-
+#include <pcl/io/pcd_io.h>
+#include <QDir>
+#include "exceptions.h"
+#include <g2o/core/factory.h>
+#define GRAPH_SLAM_DEBUG
+namespace __private{
+g2o::RegisterTypeProxy<g2o::VertexSE3> register_vertex_se3("VERTEX_SE3:QUAT");
+g2o::RegisterTypeProxy<g2o::EdgeSE3> register_edge_se3("EDGE_SE3:QUAT");
+}
 GraphSLAM::GraphSLAM()
 {
     reset();
@@ -20,15 +26,7 @@ GraphSLAM::GraphSLAM()
 
 void GraphSLAM::init()
 {
-    typedef g2o::BlockSolver<g2o::BlockSolverTraits<-1,-1> > SlamBlockSolver;
-    typedef g2o::LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
-    SlamLinearSolver* linearSolver = new SlamLinearSolver();
-    linearSolver->setBlockOrdering(false);
-    SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
-    g2o::OptimizationAlgorithmGaussNewton* solverGauss =
-            new g2o::OptimizationAlgorithmGaussNewton(blockSolver);
-    this->m_g2o_graph->setAlgorithm(solverGauss);
-    logger->logMessage("Optimization algorithm loaded");
+    this->initG2OGraph();
 }
 
 void GraphSLAM::reset()
@@ -63,16 +61,64 @@ bool GraphSLAM::optimize(const int &n_iterations)
     return true;
 }
 
-bool GraphSLAM::loadFromG2OFile(const std::string &file_name)
+void GraphSLAM::loadFromG2ODB(const QDir &db_dir)
 {
-    std::ifstream file(file_name);
 
-    logger->logMessage((std::string("Start loading from file(")+file_name+std::string(")")).c_str());
-    if(!this->m_g2o_graph->load(file)){
-        return false;
+    reset();
+
+    QString g2o_file = db_dir.path()+"/motion.g2o";
+    if(!QFile::exists(g2o_file)){
+        throw PathNotExist(g2o_file.toStdString());
     }
-    init();
-    return true;
+
+    std::ifstream file(g2o_file.toStdString());
+#ifdef GRAPH_SLAM_DEBUG
+        std::cerr<<"Loading g2o."<<std::endl;
+#endif
+    if(!this->m_g2o_graph->load(file)){
+        throw std::runtime_error("G2O load failed");
+    }
+
+#ifdef GRAPH_SLAM_DEBUG
+        std::cerr<<"Copying vertices"<<std::endl;
+#endif
+    //WARN : assuming that vertex id starts from '0' and ends at 'vertices().size()-1'.
+    size_t n_vertex = m_g2o_graph->vertices().size();
+    for(size_t id=0;id<n_vertex;id++){
+        g2o::VertexSE3* v_se3 = dynamic_cast<g2o::VertexSE3*>(m_g2o_graph->vertex(id));
+        if(v_se3 == NULL){
+            throw std::runtime_error("dynamic_cast<g2o::VertexSE3*> failed");
+        }
+        m_vertices.push_back(v_se3);
+    }
+#ifdef GRAPH_SLAM_DEBUG
+        std::cerr<<"Copying edges"<<std::endl;
+#endif
+    for(const auto& ev:m_g2o_graph->edges()){
+        g2o::EdgeSE3* e_se3 = dynamic_cast<g2o::EdgeSE3*>(ev);
+        if(e_se3 == NULL){
+            throw std::runtime_error(" dynamic_cast<g2o::EdgeSE3*> failed.");
+        }
+
+        if(abs(e_se3->vertex(1)->id() - e_se3->vertex(0)->id()) > 1){
+            m_loop_edges.push_back(e_se3);
+        }else{
+            m_loop_edges.push_back(e_se3);
+        }
+    }
+
+    for(const auto& pv:m_vertices){
+        ScanDataType::Ptr cloud(new ScanDataType());
+        std::string pcd_file = QString(db_dir.path()+"/%1.pcd").arg(pv->id(), 10,10,QChar('0')).toStdString();
+#ifdef GRAPH_SLAM_DEBUG
+        std::cerr<<"Reading "<<pcd_file<<std::endl;
+#endif
+        if(pcl::io::loadPCDFile<ScanDataType::PointType>(pcd_file,*cloud)<0){
+            logger->logMessage((std::string("Failed to read ")+pcd_file).c_str());
+            cloud.reset();
+        }
+        m_scan_data.push_back(cloud);
+    }
 }
 
 bool GraphSLAM::setVertexFixed(const int &id, const bool &fixed)
@@ -123,7 +169,7 @@ bool GraphSLAM::addEdgeFromVertices(const int &vi, const int &vj,
 }
 
 bool GraphSLAM::addLoopClosing(const int &vi, const int &vj,
-                        const PosTypes::Pose3D &data, const g2o::EdgeSE3::InformationType &info_mat)
+                               const PosTypes::Pose3D &data, const g2o::EdgeSE3::InformationType &info_mat)
 {
     EdgeType* e = GraphHelper::createEdgeSE3(m_g2o_graph->edges().size(), m_vertices[vi], m_vertices[vj], data, info_mat);
     m_g2o_graph->addEdge(e);
@@ -223,6 +269,24 @@ void GraphSLAM::slot_searchLoopClosings(QVector<int> idx_old, QVector<int> idx_n
 void GraphSLAM::slot_startOptimize(int max_iterations)
 {
 
+}
+
+void GraphSLAM::loadPCDFiles()
+{
+
+}
+
+void GraphSLAM::initG2OGraph()
+{
+    typedef g2o::BlockSolver<g2o::BlockSolverTraits<-1,-1> > SlamBlockSolver;
+    typedef g2o::LinearSolverCSparse<SlamBlockSolver::PoseMatrixType> SlamLinearSolver;
+    SlamLinearSolver* linearSolver = new SlamLinearSolver();
+    linearSolver->setBlockOrdering(false);
+    SlamBlockSolver* blockSolver = new SlamBlockSolver(linearSolver);
+    g2o::OptimizationAlgorithmGaussNewton* solverGauss =
+            new g2o::OptimizationAlgorithmGaussNewton(blockSolver);
+    this->m_g2o_graph->setAlgorithm(solverGauss);
+    logger->logMessage("Optimization algorithm loaded");
 }
 
 

@@ -12,6 +12,7 @@
 #include <pcl/point_cloud.h>
 #include "graphhelper.h"
 #include "graphtablemodel.h"
+#include <QDir>
 namespace g2o{
 class SparseOptimizer;
 }
@@ -46,21 +47,17 @@ public Q_SLOTS:
     void reset();
     void resetLoopClosings();
     bool optimize(const int& n_iterations);
-    bool loadFromG2OFile(const std::string &file_name);
+    void loadFromG2ODB(const QDir &db_dir);
     bool setVertexFixed(const int& id, const bool& fixed=true);
 
-    /*
-     * add a new vertex.
-     */
+    //Adding vertex
     bool addVertex(const PosTypes::Pose3D& p, ScanDataType::Ptr cloud_ptr, const bool& incremental=true);
 
-    /*
-     * add a new edge.
-     */
+    //Adding Edge
     bool addEdgeFromVertices(const int& vi, const int& vj, const g2o::EdgeSE3::InformationType& info_mat);
-
     bool addLoopClosing(const int& vi, const int& vj, const PosTypes::Pose3D& data ,const g2o::EdgeSE3::InformationType& info_mat);
 
+    //Removing edge
     void removeEdge(g2o::EdgeSE3* e);
     void removeEdges(QList<g2o::EdgeSE3*> es);
 
@@ -75,9 +72,10 @@ public Q_SLOTS:
                                  QVector<int> idx_new,
                                  PosTypes::Pose3D tr_new);
     void slot_startOptimize(int max_iterations);
-
 protected:
-
+    void loadPCDFiles();
+    void initG2OGraph();
+protected:
     std::shared_ptr<g2o::SparseOptimizer> m_g2o_graph;
     QVector<g2o::VertexSE3*> m_vertices;
     QVector<ScanDataType::Ptr> m_scan_data;//indices must conincide with the indices of m_vertices.

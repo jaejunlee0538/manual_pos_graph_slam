@@ -47,7 +47,6 @@ void PointCloudDisplayer::drawPointCloud(const bool &selected,
     glPopMatrix();
     glEnable(GL_LIGHTING);
     glDisable(GL_BLEND);
-
 }
 
 void PointCloudDisplayer::drawFrame(const bool &selected)

@@ -30,7 +30,7 @@
       <item>
        <widget class="QTabWidget" name="LoopEdges">
         <property name="currentIndex">
-         <number>2</number>
+         <number>1</number>
         </property>
         <widget class="QWidget" name="tab">
          <attribute name="title">
@@ -368,9 +368,24 @@
     <property name="title">
      <string>File</string>
     </property>
+    <widget class="QMenu" name="menuSave_As">
+     <property name="title">
+      <string>Save As</string>
+     </property>
+     <addaction name="action_Save_As_G2O"/>
+    </widget>
     <addaction name="action_File_Open"/>
+    <addaction name="action_Open_From_G2O"/>
+    <addaction name="menuSave_As"/>
+   </widget>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>Window</string>
+    </property>
+    <addaction name="action_Edges_Table"/>
    </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuWindow"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -384,6 +399,21 @@
   <action name="action_File_Open">
    <property name="text">
     <string>Open</string>
+   </property>
+  </action>
+  <action name="action_Save_As_G2O">
+   <property name="text">
+    <string>G2O</string>
+   </property>
+  </action>
+  <action name="action_Open_From_G2O">
+   <property name="text">
+    <string>Open From G2O</string>
+   </property>
+  </action>
+  <action name="action_Edges_Table">
+   <property name="text">
+    <string>Edges Table</string>
    </property>
   </action>
  </widget>

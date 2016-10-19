@@ -10,7 +10,7 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 CONFIG += qt opengl thread console no_keywords c++11
 
-TARGET = abc
+TARGET = manual_slam
 
 TEMPLATE = app
 

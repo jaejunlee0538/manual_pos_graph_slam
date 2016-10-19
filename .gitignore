@@ -1,5 +1,6 @@
 Externals/build
 Externals/install
+manual_slam
 # C++ objects and libs
 
 *.slo
