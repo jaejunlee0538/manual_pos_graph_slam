@@ -1,4 +1,4 @@
-#ifndef CLOUDVIEWER_H
+﻿#ifndef CLOUDVIEWER_H
 #define CLOUDVIEWER_H
 #include <QGLViewer/qglviewer.h>
 #include <vector>
@@ -12,7 +12,6 @@
 #include <QList>
 #include <g2o/types/slam3d/edge_se3.h>
 #include <QSet>
-#include "selectioninfo.h"
 #include "textdrawhelper.h"
 class CloudViewer: public QGLViewer
 {
@@ -30,7 +29,10 @@ public Q_SLOTS:
     void slot_manualLoopClosing();
     void slot_setPointAlpha(const double& alpha_point_cloud);
     void slot_setPointSize(const double& point_size);
-
+    void slot_clearSelections();
+    void slot_setSelectedCloudsVisible(bool inverse=false);
+    void slot_clearVisibleFlags(bool value=true);
+    void slot_setCloudsVisible(bool visible=true);
 Q_SIGNALS:
     /*
      *  perform LoopClosingSearch after transforming new vertices(idxNew).
@@ -40,7 +42,8 @@ Q_SIGNALS:
                             std::vector<int> idxNew,
                             qglviewer::Frame trNew);
     void loopClosingAdded(const int& vi, const int& vj, const PosTypes::Pose3D& data ,const g2o::EdgeSE3::InformationType& info_mat);
-    void selectionChanged(GraphSelectionInfo selected);
+    void verticesSelected(const QList<int>& vertices_id);
+
 protected:
     virtual void init();
     virtual void draw();
@@ -67,6 +70,7 @@ protected:
     void switchConstraint();
     void switchConstraintDirection(bool rotation);
 
+    void initPointCloudVisibleVector();
 private:
     QRect rectangle;
     enum SelectionMode{NONE, ADD, REMOVE};
@@ -74,6 +78,9 @@ private:
 
     QList<int> selections;
     QVector<PointCloudDisplayer::Ptr> clouds;
+    QVector<bool> clouds_visible;
+    bool clouds_visible_all;
+
     GraphDisplayer::Ptr graph;
     GLdouble alpha_points;
     GLfloat size_points;

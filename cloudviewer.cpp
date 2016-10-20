@@ -23,7 +23,7 @@ void generateClusters(const QList<int>& input,  QVector<QVector<int>>& clusters)
 }
 
 CloudViewer::CloudViewer(QWidget *parent):
-    QGLViewer(parent){
+    QGLViewer(parent),clouds_visible_all(true){
 
 }
 
@@ -36,6 +36,7 @@ void CloudViewer::setGraphDisplayer(GraphDisplayer::Ptr graph){
 void CloudViewer::setPointCloudDisplayers(QVector<PointCloudDisplayer::Ptr> clouds){
     logger->logMessage("setPointCloudDisplayers");
     this->clouds = clouds;
+    initPointCloudVisibleVector();
     updateGL();
 }
 
@@ -89,12 +90,6 @@ void CloudViewer::slot_manualLoopClosing(){
         logger->logMessage(oss.str().c_str());
         g2o::EdgeSE3::InformationType info;
         info.setIdentity();
-        info(0,0) = info(1,1)  = 100.0;
-        info(2,2) = 100.0;
-
-        info(3,3) =1000.0;
-        info(4,4) =1000.0;
-        info(5,5) =100;
         Q_EMIT loopClosingAdded(clusters[0][0], clusters[1][0], QGLHelper::toPosTypesPose3D(icp_result), info);
     }
 #endif
@@ -110,6 +105,41 @@ void CloudViewer::slot_setPointSize(const double &point_size){
     updateGL();
 }
 
+void CloudViewer::slot_clearSelections()
+{
+    selections.clear();
+    Q_EMIT verticesSelected(selections);
+    updateGL();
+}
+
+void CloudViewer::slot_setSelectedCloudsVisible(bool inverse)
+{
+    bool init, val;
+    if(inverse){
+        init = true;
+        val = false;
+    }else{
+        init = false;
+        val = true;
+    }
+    std::fill(clouds_visible.begin(), clouds_visible.end(), init);
+    for(const auto& idx:selections){
+        clouds_visible[idx] = val;
+    }
+    updateGL();
+}
+
+void CloudViewer::slot_clearVisibleFlags(bool value)
+{
+    std::fill(clouds_visible.begin(), clouds_visible.end(), value);
+    updateGL();
+}
+
+void CloudViewer::slot_setCloudsVisible(bool visible)
+{
+    clouds_visible_all = visible;
+    updateGL();
+}
 
 void CloudViewer::init(){
     initConstraint();
@@ -137,11 +167,11 @@ void CloudViewer::draw(){
         graph->drawMotionEdges();
     }
     if(!clouds.empty()){
-        double x,y,z;
-        clouds[0]->frame.getTranslation(x,y,z);
         for(size_t i=0;i<clouds.size();i++){
             bool selected = selections.contains(i);
-            clouds[i]->drawPointCloud(selected, size_points,alpha_points);
+            if(clouds_visible_all&&clouds_visible[i]){
+                clouds[i]->drawPointCloud(selected, size_points,alpha_points);
+            }
             clouds[i]->drawFrame(selected);
         }
     }
@@ -179,9 +209,7 @@ void CloudViewer::endSelection(const QPoint &point)
                 break;
             }
         }
-        GraphSelectionInfo info;
-        info.vertices = this->selections;
-        Q_EMIT selectionChanged(info);
+        Q_EMIT verticesSelected(selections);
     }
     selection_mode = NONE;
 }
@@ -482,4 +510,12 @@ void CloudViewer::switchConstraintDirection(bool rotation)
         dir[translation_dir] = 1.0;
         constraints[active_constraint]->setTranslationConstraintDirection(dir);
     }
+}
+
+void CloudViewer::initPointCloudVisibleVector()
+{
+    if(clouds_visible.size() == clouds.size())
+        return;
+    clouds_visible.resize(clouds.size());
+    std::fill(clouds_visible.begin(), clouds_visible.end(), true);
 }

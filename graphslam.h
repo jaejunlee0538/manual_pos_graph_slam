@@ -12,11 +12,13 @@
 #include <pcl/point_cloud.h>
 #include "graphhelper.h"
 #include "graphtablemodel.h"
+#include <unordered_map>
 #include <QDir>
+#include "edgemanipulator.h"
 namespace g2o{
 class SparseOptimizer;
 }
-
+class MainWindow;
 class GraphSLAM : public QObject
 {
     Q_OBJECT
@@ -42,12 +44,13 @@ public:
     void init();
     void sendGraph();
     void sendPointCloud();
-
+    bool initialized()const;
 public Q_SLOTS:
     void reset();
     void resetLoopClosings();
     bool optimize(const int& n_iterations);
     void loadFromG2ODB(const QDir &db_dir);
+    bool saveAsG2O(const QString fname);
     bool setVertexFixed(const int& id, const bool& fixed=true);
 
     //Adding vertex
@@ -58,20 +61,23 @@ public Q_SLOTS:
     bool addLoopClosing(const int& vi, const int& vj, const PosTypes::Pose3D& data ,const g2o::EdgeSE3::InformationType& info_mat);
 
     //Removing edge
-    void removeEdge(g2o::EdgeSE3* e);
-    void removeEdges(QList<g2o::EdgeSE3*> es);
+    void removeEdge(const g2o::EdgeSE3* e);
+    void removeEdges(QList<const g2o::EdgeSE3*> es);
+    void modifyEdges(const EdgeModifications& modifications);
 
 Q_SIGNALS:
-    void graphUpdated(GraphDisplayer::Ptr graph);
-    void graphUpdated2(EdgeTableModel::Ptr graph_table_model);
+    void graphDisplayUpdated(GraphDisplayer::Ptr graph);
+    void graphTableUpdated(GraphTableData* graph_table_model);
     void pointCloudsUpdated(QVector<PointCloudDisplayer::Ptr> clouds);
     void showMessage(QString msg);
+    void verticesSelected(const QList<int>& vertices_id);
+    void edgesSelected(const QList<int>& motion_edges, const QList<int>& loop_edges);
 
 public Q_SLOTS:
-    void slot_searchLoopClosings(QVector<int> idx_old,
-                                 QVector<int> idx_new,
-                                 PosTypes::Pose3D tr_new);
-    void slot_startOptimize(int max_iterations);
+    void slot_sendGraphTable();
+    void slot_sendGraphDisplay();
+    void slot_selectVertices(const QList<int>& vertices_id, bool select_edges);
+
 protected:
     void loadPCDFiles();
     void initG2OGraph();
@@ -81,6 +87,7 @@ protected:
     QVector<ScanDataType::Ptr> m_scan_data;//indices must conincide with the indices of m_vertices.
     QVector<g2o::EdgeSE3*> m_motion_edges;
     QList<g2o::EdgeSE3*> m_loop_edges;
+    friend class MainWindow;
 };
 
 #endif // GRAPHSLAM_H

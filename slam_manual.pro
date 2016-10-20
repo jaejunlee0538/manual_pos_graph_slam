@@ -36,11 +36,11 @@ SOURCES += main.cpp\
     standardcamera.cpp \
     icpdialog.cpp \
     QGLHelper.cpp \
-    matrixtextedit.cpp \
-    selectioninfo.cpp \
     textdrawhelper.cpp \
     graphtablemodel.cpp \
-    graphtabledialog.cpp
+    graphtabledialog.cpp \
+    matrixmanipulator.cpp \
+    edgemanipulator.cpp
 
 HEADERS  += mainwindow.h \
     cloudviewer.h\
@@ -57,11 +57,11 @@ HEADERS  += mainwindow.h \
     standardcamera.h \
     icpdialog.h \
     QGLHelper.h \
-    matrixtextedit.h \
-    selectioninfo.h \
     textdrawhelper.h \
     graphtablemodel.h \
-    graphtabledialog.h
+    graphtabledialog.h \
+    matrixmanipulator.h \
+    edgemanipulator.h
 
 unix {
 #        CONFIG -= debug debug_and_release
@@ -90,4 +90,6 @@ LIBS += -L/usr/lib/x86_64-linux-gnu -lboost_system
 LIBS += -licplib -fopenmp
 FORMS    += mainwindow.ui \
     icpdialog.ui \
-    graphtabledialog.ui
+    graphtabledialog.ui \
+    matrixmanipulator.ui \
+    edgemanipulator.ui

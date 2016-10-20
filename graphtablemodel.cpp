@@ -18,24 +18,24 @@ EdgeTableModel::EdgeTableModel()
 
 }
 
-void EdgeTableModel::pushBack(g2o::EdgeSE3 *edge)
+void EdgeTableModel::pushBack(const g2o::EdgeSE3 *edge)
 {
-    bin_edges.push_back(edge);
+    edges_se3.push_back(edge);
 }
 
 void EdgeTableModel::clear()
 {
-    bin_edges.clear();
+    edges_se3.clear();
 }
 
-g2o::EdgeSE3 *EdgeTableModel::at(int irow)
+const g2o::EdgeSE3 *EdgeTableModel::at(int irow) const
 {
-    return bin_edges[irow];
+    return edges_se3[irow];
 }
 
 int EdgeTableModel::rowCount(const QModelIndex &parent) const
 {
-    return bin_edges.size();
+    return edges_se3.size();
 }
 
 int EdgeTableModel::columnCount(const QModelIndex &parent) const
@@ -47,7 +47,7 @@ int EdgeTableModel::columnCount(const QModelIndex &parent) const
 QVariant EdgeTableModel::data(const QModelIndex &index, int role) const
 {
     if(role == Qt::DisplayRole || role == Qt::EditRole){
-        const g2o::EdgeSE3* edge = bin_edges[index.row()];
+        const g2o::EdgeSE3* edge = edges_se3[index.row()];
         switch(index.column()){
         case 0:                 return QVariant(edge->id());
         case 1:                 return QVariant(edge->vertex(0)->id());
@@ -60,33 +60,31 @@ QVariant EdgeTableModel::data(const QModelIndex &index, int role) const
         }
         case 4:
         {
-            int dim = edge->measurementDimension();
+            int dim = edge->information().rows();
             QVector<double> info(dim*dim);
             edge->informationData();
             std::copy(edge->informationData(), edge->informationData()+dim*dim, info.begin());
             return QVariant(vectorTostring(info));
         }
-        default:
-            return QVariant();
         }
-        return QVariant();
     }
     return QVariant();
 }
 
 QVariant EdgeTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
-    if(role == Qt::DisplayRole && orientation==Qt::Horizontal){
-        switch(section){
-        case 0:     return QVariant("ID");
-        case 1:     return QVariant("Vi");
-        case 2:     return QVariant("Vj");
-        case 3:     return QVariant("Measurement");
-        case 4:     return QVariant("Information");
-        default:
-            return QVariant();
+    if(role == Qt::DisplayRole ){
+        if(orientation==Qt::Horizontal){
+            switch(section){
+            case 0:     return QVariant("ID");
+            case 1:     return QVariant("Vi");
+            case 2:     return QVariant("Vj");
+            case 3:     return QVariant("Measurement");
+            case 4:     return QVariant("Information");
+            }
+        }else if(orientation == Qt::Vertical){
+            return QVariant(section);
         }
-        return QVariant();
     }
     return QVariant();
 }
@@ -110,4 +108,15 @@ bool EdgeTableModel::setData(const QModelIndex &index, const QVariant &value, in
         return true;
     }
     return false;
+}
+
+
+void VertexTableModel::pushBack(const g2o::VertexSE3 *vertex)
+{
+    vertices_se3.push_back(vertex);
+}
+
+const g2o::VertexSE3 *VertexTableModel::at(int irow) const
+{
+    return vertices_se3[irow];
 }

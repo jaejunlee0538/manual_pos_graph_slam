@@ -7,6 +7,7 @@
 #include <sstream>
 #include <pcl/io/pcd_io.h>
 #include <QTableView>
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -22,8 +23,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::init()
 {
+
     QObject::connect(&graph_slam, SIGNAL(showMessage(QString)), this, SLOT(appendMessage(QString)));
-    QObject::connect(&graph_slam, SIGNAL(graphUpdated(GraphDisplayer::Ptr)),
+    QObject::connect(&graph_slam, SIGNAL(graphDisplayUpdated(GraphDisplayer::Ptr)),
                      ui->widget_CloudViewer, SLOT(setGraphDisplayer(GraphDisplayer::Ptr)));
     QObject::connect(&graph_slam, SIGNAL(pointCloudsUpdated(QVector<PointCloudDisplayer::Ptr>)),
                      ui->widget_CloudViewer, SLOT(setPointCloudDisplayers(QVector<PointCloudDisplayer::Ptr>)));
@@ -35,12 +37,11 @@ void MainWindow::init()
                      this->ui->widget_CloudViewer, SLOT(slot_setPointAlpha(double)));
     QObject::connect(this->ui->doubleSpinBox_PointSize, SIGNAL(valueChanged(double)),
                      this->ui->widget_CloudViewer, SLOT(slot_setPointSize(double)));
-    QObject::connect(&graph_slam, SIGNAL(graphUpdated2(EdgeTableModel::Ptr)),
-                     this, SLOT(slot_updateGraph(EdgeTableModel::Ptr)));
-
-    loop_table_model.reset(new EdgeTableModel());
-    this->ui->tableView_LoopEdges->setModel(loop_table_model.get());
-    ui->tableView_LoopEdges->setColumnWidth(3, 150);
+    QObject::connect(ui->widget_CloudViewer, SIGNAL(verticesSelected(QList<int>)),
+                        this, SLOT(selectVertices(QList<int>)));
+    QObject::connect(&timer, SIGNAL(timeout()), this, SLOT(slot_autoSave()));
+    timer.setInterval(1000*60*5);//5 mintue auto save.
+    timer.start();
 }
 
 void MainWindow::loadGraphFromPCDDatabase(const QDir &db_dir)
@@ -96,11 +97,6 @@ void MainWindow::loadGraphFromPCDDatabase(const QDir &db_dir)
     }
 }
 
-void MainWindow::loadGraphFromG2ODatabase(const QDir &db_dir)
-{
-
-}
-
 void MainWindow::resetMessage()
 {
     ui->plainTextEdit_Message->clear();
@@ -109,24 +105,6 @@ void MainWindow::resetMessage()
 void MainWindow::appendMessage(QString msg)
 {
     ui->plainTextEdit_Message->appendPlainText(msg);
-}
-
-void MainWindow::setSelections(GraphSelectionInfo info)
-{
-    this->selection_info = info;
-}
-
-void MainWindow::slot_updateGraph(EdgeTableModel::Ptr graph){
-    ui->tableView_LoopEdges->setModel(graph.get());
-    loop_table_model = graph;//To prevent shared_ptr destroy the item.
-}
-
-void MainWindow::slot_edgesTableDialogClosed()
-{
-    logger->logMessage("Graph Edge Dialog closed");
-    QObject::disconnect(graph_table_dialog, SIGNAL(destroyed()),
-                     this,SLOT(slot_edgesTableDialogClosed()));
-    this->graph_table_dialog = NULL;
 }
 
 void MainWindow::on_action_File_Open_triggered()
@@ -165,42 +143,49 @@ void MainWindow::on_pushButton_Optimize_clicked()
 
 void MainWindow::on_pushButton_Reset_clicked()
 {
-
+    this->graph_slam.reset();
 }
 
 void MainWindow::on_pushButton_ClearLoopClosings_clicked()
 {
-    graph_slam.resetLoopClosings();
-}
-
-void MainWindow::on_pushButton_ApplyInfoMatrix_clicked()
-{
-
-}
-
-void MainWindow::on_pushButton_DeleteLoopEdge_clicked()
-{
-
-}
-
-void MainWindow::on_pushButton_DeleteSelectedLoopClosings_clicked()
-{
-    QModelIndexList selected_row = ui->tableView_LoopEdges->selectionModel()->selectedRows();
-    if(selected_row.empty()){
-        return;
+    auto reply= QMessageBox::question(this, "Clearing Loop Closing",
+                                  "Do you want to remove all loop closures?",
+                                  QMessageBox::Yes|QMessageBox::No);
+    if(reply == QMessageBox::Yes){
+        graph_slam.resetLoopClosings();
     }
-    QList<g2o::EdgeSE3*> edges;
-    for(size_t i=0;i<selected_row.size();i++){
-        //        std::cerr<<selected_row[i].row()<<std::endl;
-        edges.push_back(this->loop_table_model->at(selected_row[i].row()));
-    }
-    graph_slam.removeEdges(edges);
 }
 
 void MainWindow::on_action_Save_As_G2O_triggered()
 {
-    logger->logMessage("Saving as g2o");
-    //TODO
+    //    QFileDialog file_dlg(this, "Open Database","");
+    //    file_dlg.setFileMode(QFileDialog::DirectoryOnly);
+    //    file_dlg.setModal(true);
+    //    if(file_dlg.exec()){
+    //        QDir db = file_dlg.directory();
+      QDir db(QDir::homePath()+"/manual_slam_db");
+    QString file_name = QFileDialog::getSaveFileName(this, "Save as", db.path(), "*.g2o");
+    if(file_name.size()){
+        logger->logMessage((QString("Saving pose graph in ")+file_name).toStdString().c_str());
+        if(!graph_slam.saveAsG2O(file_name)){
+            logger->logMessage("Saving g2o failed.");
+        }
+    }
+}
+
+void MainWindow::slot_graphTableDialogClosed()
+{
+    logger->logMessage("Graph Edge Dialog closed");
+    QObject::disconnect(graph_table_dialog, SIGNAL(destroyed()),
+                        this,SLOT(slot_graphTableDialogClosed()));
+    QObject::disconnect(graph_table_dialog, SIGNAL(edgesShouldBeRemoved(QList<const g2o::EdgeSE3*>)),
+                        &graph_slam, SLOT(removeEdges(QList<const g2o::EdgeSE3*>)));
+    QObject::disconnect(&graph_slam, SIGNAL(graphTableUpdated(GraphTableData*)),
+                        graph_table_dialog, SLOT(setGraphTable(GraphTableData*)));
+    QObject::disconnect(&graph_slam, SIGNAL(edgesSelected(QList<int>,QList<int>)),
+                     graph_table_dialog, SLOT(selectEdges(QList<int>,QList<int>)));
+
+    this->graph_table_dialog = NULL;
 }
 
 void MainWindow::on_action_Edges_Table_triggered()
@@ -208,11 +193,21 @@ void MainWindow::on_action_Edges_Table_triggered()
     if(graph_table_dialog){
         return;
     }
-     logger->logMessage("Opening Edge Table Dialog");
+    logger->logMessage("Opening Edge Table Dialog");
     graph_table_dialog = new GraphTableDialog(this);
     graph_table_dialog->setModal(false);
     QObject::connect(graph_table_dialog, SIGNAL(destroyed()),
-                     this,SLOT(slot_edgesTableDialogClosed()));
+                     this,SLOT(slot_graphTableDialogClosed()));
+    QObject::connect(graph_table_dialog, SIGNAL(edgesShouldBeRemoved(QList<const g2o::EdgeSE3*>)),
+                     &graph_slam, SLOT(removeEdges(QList<const g2o::EdgeSE3*>)));
+    QObject::connect(&graph_slam, SIGNAL(graphTableUpdated(GraphTableData*)),
+                     graph_table_dialog, SLOT(setGraphTable(GraphTableData*)));
+    QObject::connect(&graph_slam, SIGNAL(edgesSelected(QList<int>,QList<int>)),
+                     graph_table_dialog, SLOT(selectEdges(QList<int>,QList<int>)));
+    QObject::connect(graph_table_dialog, SIGNAL(edgesShouldBeModified(EdgeModifications)),
+                     &graph_slam, SLOT(modifyEdges(EdgeModifications)));
+
+    graph_slam.slot_sendGraphTable();
     graph_table_dialog->show();
 }
 
@@ -236,4 +231,47 @@ void MainWindow::on_action_Open_From_G2O_triggered()
     logger->logMessage(oss.str().c_str());
     graph_slam.sendGraph();
     graph_slam.sendPointCloud();
+}
+
+void MainWindow::selectVertices(QList<int> vertices_id)
+{
+    graph_slam.slot_selectVertices(vertices_id, true);
+}
+
+void MainWindow::on_pushButton_ClearSelection_clicked()
+{
+    this->ui->widget_CloudViewer->slot_clearSelections();
+}
+
+void MainWindow::on_pushButton_SetSelectedVerticesVisible_clicked()
+{
+    ui->widget_CloudViewer->slot_setSelectedCloudsVisible();
+    ui->widget_CloudViewer->slot_clearSelections();
+}
+
+void MainWindow::on_pushButton_SetVisibleAll_clicked()
+{
+    ui->widget_CloudViewer->slot_clearVisibleFlags(true);
+}
+
+void MainWindow::on_checkBox_ShowPointCloud_toggled(bool checked)
+{
+    ui->widget_CloudViewer->slot_setCloudsVisible(checked);
+}
+
+void MainWindow::slot_autoSave()
+{
+    if(!graph_slam.initialized()){
+        std::cerr<<"graph is not initialized.["<<Q_FUNC_INFO<<"]"<<std::endl;
+        return;
+    }
+    QDir dir(QDir::homePath()+"/.manual_slam_autosave");
+    if(! dir.exists()){
+        logger->logMessage("Creating directory for auto-saving.");
+        dir.mkpath(dir.path());
+    }
+    QString file_name = dir.path() + "/auto_save.g2o";
+    graph_slam.saveAsG2O(file_name);
+    QString msg = "auto save to "+file_name;
+    logger->logMessage(msg.toStdString().c_str());
 }
