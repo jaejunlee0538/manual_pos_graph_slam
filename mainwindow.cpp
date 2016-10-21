@@ -46,55 +46,55 @@ void MainWindow::init()
 
 void MainWindow::loadGraphFromPCDDatabase(const QDir &db_dir)
 {
-    db_dir.entryList({"*.pcd"},QDir::Files, QDir::Name);
-    QString motion(db_dir.path()+"/motion.txt");
+//    db_dir.entryList({"*.pcd"},QDir::Files, QDir::Name);
+//    QString motion(db_dir.path()+"/motion.txt");
 
-    if(!QFile(motion).exists()){
-        throw PathNotExist(motion.toStdString());
-    }
-    graph_slam.reset();
-    std::ifstream file(motion.toStdString());
-    std::string token;
-    int id1, id2;
-    double dx, dy, dz, qw, qx, qy, qz;
-    GraphSLAM::InformationType info = GraphSLAM::InformationType::Identity();
-    info(0,0) = info(1,1)  = 100.0;
-    info(2,2) = 100.0;
+//    if(!QFile(motion).exists()){
+//        throw PathNotExist(motion.toStdString());
+//    }
+//    graph_slam.reset();
+//    std::ifstream file(motion.toStdString());
+//    std::string token;
+//    int id1, id2;
+//    double dx, dy, dz, qw, qx, qy, qz;
+//    GraphSLAM::InformationType info = GraphSLAM::InformationType::Identity();
+//    info(0,0) = info(1,1)  = 100.0;
+//    info(2,2) = 100.0;
 
-    info(3,3) =1000.0;
-    info(4,4) =1000.0;
-    info(5,5) =50;
+//    info(3,3) =1000.0;
+//    info(4,4) =1000.0;
+//    info(5,5) =50;
 
-    size_t cnt = 0;
-    for(std::string line; std::getline(file, line);cnt++){
-        std::stringstream str(line);
-        str >> id1;        str >> id2;
-        str >> dx;         str >> dy;        str >> dz;
-        str >> qx;        str >> qy;        str >> qz;        str >> qw;
+//    size_t cnt = 0;
+//    for(std::string line; std::getline(file, line);cnt++){
+//        std::stringstream str(line);
+//        str >> id1;        str >> id2;
+//        str >> dx;         str >> dy;        str >> dz;
+//        str >> qx;        str >> qy;        str >> qz;        str >> qw;
 
-        //set positional data.
-        PosTypes::Pose3D pos(dx, dy, dz, qx, qy, qz, qw);
+//        //set positional data.
+//        PosTypes::Pose3D pos(dx, dy, dz, qx, qy, qz, qw);
 
-        //read sensor data(Point Cloud)
-        GraphSLAM::ScanDataType::Ptr cloud(new GraphSLAM::ScanDataType());
-        std::ostringstream oss;
-        oss<<db_dir.path().toStdString()<<"/"<<std::setfill('0')<<std::setw(10)<<id2<<".pcd";
-        std::string pcd_name = oss.str();
+//        //read sensor data(Point Cloud)
+//        GraphSLAM::ScanDataType::Ptr cloud(new GraphSLAM::ScanDataType());
+//        std::ostringstream oss;
+//        oss<<db_dir.path().toStdString()<<"/"<<std::setfill('0')<<std::setw(10)<<id2<<".pcd";
+//        std::string pcd_name = oss.str();
 
-        if(pcl::io::loadPCDFile<GraphSLAM::ScanDataType::PointType>(pcd_name, *cloud)<0){
-            logger->logMessage((std::string("Failed to read ")+pcd_name).c_str());
-            cloud.reset();
-        }
-        //on a reading failure, cloud(shared_ptr) will have NULL pointer
+//        if(pcl::io::loadPCDFile<GraphSLAM::ScanDataType::PointType>(pcd_name, *cloud)<0){
+//            logger->logMessage((std::string("Failed to read ")+pcd_name).c_str());
+//            cloud.reset();
+//        }
+//        //on a reading failure, cloud(shared_ptr) will have NULL pointer
 
-        graph_slam.addVertex(pos, cloud, true);
-        if(id1 == -1){
-            graph_slam.setVertexFixed(0, true);
-        }else{
-            int n = graph_slam.nVertices();
-            graph_slam.addEdgeFromVertices(n-2, n-1, info);
-        }
-    }
+//        graph_slam.addVertex(pos, cloud, true);
+//        if(id1 == -1){
+//            graph_slam.setVertexFixed(0, true);
+//        }else{
+//            int n = graph_slam.nVertices();
+//            graph_slam.addEdgeFromVertices(n-2, n-1, info);
+//        }
+//    }
 }
 
 void MainWindow::resetMessage()

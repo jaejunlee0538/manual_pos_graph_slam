@@ -13,6 +13,7 @@
 #include <QDir>
 #include "exceptions.h"
 #include <g2o/core/factory.h>
+#include <map>
 #define GRAPH_SLAM_DEBUG
 
 namespace __private{
@@ -350,20 +351,42 @@ void GraphSLAM::slot_selectVertices(const QList<int> &vertices_id, bool select_e
     Q_EMIT verticesSelected(vertices_id);
 
     if(select_edges){
-        g2o::HyperGraph::EdgeSet loop, motion;
+        //aggregate every edges stemming from selected vertices
+        std::map<g2o::HyperGraph::Edge*, int> loop, motion;
         for(const auto& id:vertices_id){
             for(auto e:m_vertices[id]->edges()){
                 if(abs(e->vertex(0)->id() - e->vertex(1)->id()) > 1){
                     //loop closing edge
-                    loop.insert(e);
+                    if(loop.find(e) ==loop.end()){
+                        loop[e] = 1;
+                    }else{
+                        loop[e]++;
+                    }
                 }
                 else{
                     //motion edge
-                    motion.insert(e);
+                    if(motion.find(e) ==motion.end()){
+                        motion[e] = 1;
+                    }else{
+                        motion[e]++;
+                    }
                 }
             }
         }
 
+        //For an edge being selected, both vertices should be selected.
+        for(auto iter =loop.begin();iter !=loop.end();iter++){
+            if(iter->second != 2){
+                loop.erase(iter);
+            }
+        }
+        for(auto iter =motion.begin();iter !=motion.end();iter++){
+            if(iter->second != 2){
+                motion.erase(iter);
+            }
+        }
+
+        //find the index of selected edges in each edge vectors.
         QList<int> loop_ids, motion_ids;
         for(size_t i=0;i<m_loop_edges.size();i++){
             auto res = loop.find(m_loop_edges[i]);
@@ -385,7 +408,6 @@ void GraphSLAM::slot_selectVertices(const QList<int> &vertices_id, bool select_e
         if(!motion.empty()){
             logger->logMessage(QString("There are remaining motion edges[%1]").arg(Q_FUNC_INFO).toStdString().c_str());
         }
-
 
         Q_EMIT edgesSelected(motion_ids,loop_ids);
     }

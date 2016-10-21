@@ -15,6 +15,7 @@ void PointCloudDisplayer::drawPointCloud(const bool &selected,
 {
     glEnable(GL_BLEND);
     glDisable(GL_LIGHTING);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     size_t n_points = this->data.size() / fields.size();
     if(n_points == 0){
         return;

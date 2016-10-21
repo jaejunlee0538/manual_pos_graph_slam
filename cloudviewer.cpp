@@ -170,7 +170,7 @@ void CloudViewer::draw(){
         for(size_t i=0;i<clouds.size();i++){
             bool selected = selections.contains(i);
             if(clouds_visible_all&&clouds_visible[i]){
-                clouds[i]->drawPointCloud(selected, size_points,alpha_points);
+                clouds[i]->drawPointCloud(selected, size_points, alpha_points);
             }
             clouds[i]->drawFrame(selected);
         }
