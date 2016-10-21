@@ -14,6 +14,7 @@
 #include "exceptions.h"
 #include <g2o/core/factory.h>
 #include <map>
+
 #define GRAPH_SLAM_DEBUG
 
 namespace __private{
@@ -353,6 +354,7 @@ void GraphSLAM::slot_selectVertices(const QList<int> &vertices_id, bool select_e
     if(select_edges){
         //aggregate every edges stemming from selected vertices
         std::map<g2o::HyperGraph::Edge*, int> loop, motion;
+
         for(const auto& id:vertices_id){
             for(auto e:m_vertices[id]->edges()){
                 if(abs(e->vertex(0)->id() - e->vertex(1)->id()) > 1){
@@ -387,6 +389,7 @@ void GraphSLAM::slot_selectVertices(const QList<int> &vertices_id, bool select_e
         }
 
         //find the index of selected edges in each edge vectors.
+
         QList<int> loop_ids, motion_ids;
         for(size_t i=0;i<m_loop_edges.size();i++){
             auto res = loop.find(m_loop_edges[i]);

@@ -1,1 +1,0 @@
-/usr/bin/c++   -std=c++11  -fext-numeric-literals -fopenmp    CMakeFiles/demo.dir/src/demo.cpp.o  -o demo -rdynamic libicplib.a 
