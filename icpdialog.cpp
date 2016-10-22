@@ -52,6 +52,18 @@ void ICPDialog::setTemplateClouds(const QVector<PointCloudDisplayer::Ptr> &input
     }
 }
 
+void ICPDialog::setModelCloud(PointCloudDisplayer::Ptr &input)
+{
+    clouds[0] = input;
+    clouds[0]->setSelectable(false);
+}
+
+void ICPDialog::setTemplateCloud(PointCloudDisplayer::Ptr &input)
+{
+    clouds[1] = input;
+    clouds[1]->setSelectable(true);
+}
+
 void ICPDialog::initialize()
 {
     //express 'input' cloud w.r.t 'model' frame.

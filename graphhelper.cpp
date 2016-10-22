@@ -53,7 +53,18 @@ void convertSE3ToqglviewerFrame(const g2o::VertexSE3::EstimateType &in, qglviewe
     out.setFromMatrix(m);
 }
 
+void setInformationMatrixDiagonal(g2o::EdgeSE3::InformationType& info, const double& v){
+    info.setZero();
+    for(int i=0;i<info.rows();i++){
+        info(i,i) = v;
+    }
+}
 
-
+void convertEdgeSE3ToqglviewerFrame(const g2o::EdgeSE3::Measurement &in, qglviewer::Frame &out)
+{
+    static GLdouble m[16];
+    convertEdgeSE3To4X4Matrix(in, m);
+    out.setFromMatrix(m);
+}
 
 }

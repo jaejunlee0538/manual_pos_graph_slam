@@ -20,6 +20,8 @@ public:
     ~ICPDialog();
     void setModelClouds(const QVector<PointCloudDisplayer::Ptr>& inputs);
     void setTemplateClouds(const QVector<PointCloudDisplayer::Ptr>& inputs);
+    void setModelCloud(PointCloudDisplayer::Ptr& input);
+    void setTemplateCloud(PointCloudDisplayer::Ptr& input);
     void initialize();
     qglviewer::Frame getICPResult();
 Q_SIGNALS:

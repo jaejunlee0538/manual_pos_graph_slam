@@ -45,6 +45,11 @@ private Q_SLOTS://because of no_keywords flag, we have to use Q_SLOTS instead of
     void on_checkBox_ShowPointCloud_toggled(bool checked);
 
     void slot_autoSave();
+    void on_pushButton_ManualLoopClosing_clicked();
+
+Q_SIGNALS:
+    void loopClosingAdded(const int& vi, const int& vj, const PosTypes::Pose3D& data ,const g2o::EdgeSE3::InformationType& info_mat);
+
 private:
     //ui
     Ui::MainWindow *ui;

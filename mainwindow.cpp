@@ -7,7 +7,8 @@
 #include <sstream>
 #include <pcl/io/pcd_io.h>
 #include <QTableView>
-
+#include "icpdialog.h"
+#include "QGLHelper.h"
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -29,72 +30,73 @@ void MainWindow::init()
                      ui->widget_CloudViewer, SLOT(setGraphDisplayer(GraphDisplayer::Ptr)));
     QObject::connect(&graph_slam, SIGNAL(pointCloudsUpdated(QVector<PointCloudDisplayer::Ptr>)),
                      ui->widget_CloudViewer, SLOT(setPointCloudDisplayers(QVector<PointCloudDisplayer::Ptr>)));
-    QObject::connect(this->ui->pushButton_ManualLoopClosing, SIGNAL(clicked()),
-                     this->ui->widget_CloudViewer, SLOT(slot_manualLoopClosing()));
-    QObject::connect(this->ui->widget_CloudViewer, SIGNAL(loopClosingAdded(int,int,PosTypes::Pose3D,g2o::EdgeSE3::InformationType)),
+//    //    QObject::connect(this->ui->pushButton_ManualLoopClosing, SIGNAL(clicked()),
+//    //                     this->ui->widget_CloudViewer, SLOT(slot_manualLoopClosing()));
+    QObject::connect(this, SIGNAL(loopClosingAdded(int,int,PosTypes::Pose3D,g2o::EdgeSE3::InformationType)),
                      &graph_slam, SLOT(addLoopClosing(int,int,PosTypes::Pose3D,g2o::EdgeSE3::InformationType)));
     QObject::connect(this->ui->doubleSpinBox_AlphaPointCloud, SIGNAL(valueChanged(double)),
                      this->ui->widget_CloudViewer, SLOT(slot_setPointAlpha(double)));
     QObject::connect(this->ui->doubleSpinBox_PointSize, SIGNAL(valueChanged(double)),
                      this->ui->widget_CloudViewer, SLOT(slot_setPointSize(double)));
     QObject::connect(ui->widget_CloudViewer, SIGNAL(verticesSelected(QList<int>)),
-                        this, SLOT(selectVertices(QList<int>)));
+                     this, SLOT(selectVertices(QList<int>)));
     QObject::connect(&timer, SIGNAL(timeout()), this, SLOT(slot_autoSave()));
+
     timer.setInterval(1000*60*5);//5 mintue auto save.
     timer.start();
 }
 
 void MainWindow::loadGraphFromPCDDatabase(const QDir &db_dir)
 {
-//    db_dir.entryList({"*.pcd"},QDir::Files, QDir::Name);
-//    QString motion(db_dir.path()+"/motion.txt");
+    //    db_dir.entryList({"*.pcd"},QDir::Files, QDir::Name);
+    //    QString motion(db_dir.path()+"/motion.txt");
 
-//    if(!QFile(motion).exists()){
-//        throw PathNotExist(motion.toStdString());
-//    }
-//    graph_slam.reset();
-//    std::ifstream file(motion.toStdString());
-//    std::string token;
-//    int id1, id2;
-//    double dx, dy, dz, qw, qx, qy, qz;
-//    GraphSLAM::InformationType info = GraphSLAM::InformationType::Identity();
-//    info(0,0) = info(1,1)  = 100.0;
-//    info(2,2) = 100.0;
+    //    if(!QFile(motion).exists()){
+    //        throw PathNotExist(motion.toStdString());
+    //    }
+    //    graph_slam.reset();
+    //    std::ifstream file(motion.toStdString());
+    //    std::string token;
+    //    int id1, id2;
+    //    double dx, dy, dz, qw, qx, qy, qz;
+    //    GraphSLAM::InformationType info = GraphSLAM::InformationType::Identity();
+    //    info(0,0) = info(1,1)  = 100.0;
+    //    info(2,2) = 100.0;
 
-//    info(3,3) =1000.0;
-//    info(4,4) =1000.0;
-//    info(5,5) =50;
+    //    info(3,3) =1000.0;
+    //    info(4,4) =1000.0;
+    //    info(5,5) =50;
 
-//    size_t cnt = 0;
-//    for(std::string line; std::getline(file, line);cnt++){
-//        std::stringstream str(line);
-//        str >> id1;        str >> id2;
-//        str >> dx;         str >> dy;        str >> dz;
-//        str >> qx;        str >> qy;        str >> qz;        str >> qw;
+    //    size_t cnt = 0;
+    //    for(std::string line; std::getline(file, line);cnt++){
+    //        std::stringstream str(line);
+    //        str >> id1;        str >> id2;
+    //        str >> dx;         str >> dy;        str >> dz;
+    //        str >> qx;        str >> qy;        str >> qz;        str >> qw;
 
-//        //set positional data.
-//        PosTypes::Pose3D pos(dx, dy, dz, qx, qy, qz, qw);
+    //        //set positional data.
+    //        PosTypes::Pose3D pos(dx, dy, dz, qx, qy, qz, qw);
 
-//        //read sensor data(Point Cloud)
-//        GraphSLAM::ScanDataType::Ptr cloud(new GraphSLAM::ScanDataType());
-//        std::ostringstream oss;
-//        oss<<db_dir.path().toStdString()<<"/"<<std::setfill('0')<<std::setw(10)<<id2<<".pcd";
-//        std::string pcd_name = oss.str();
+    //        //read sensor data(Point Cloud)
+    //        GraphSLAM::ScanDataType::Ptr cloud(new GraphSLAM::ScanDataType());
+    //        std::ostringstream oss;
+    //        oss<<db_dir.path().toStdString()<<"/"<<std::setfill('0')<<std::setw(10)<<id2<<".pcd";
+    //        std::string pcd_name = oss.str();
 
-//        if(pcl::io::loadPCDFile<GraphSLAM::ScanDataType::PointType>(pcd_name, *cloud)<0){
-//            logger->logMessage((std::string("Failed to read ")+pcd_name).c_str());
-//            cloud.reset();
-//        }
-//        //on a reading failure, cloud(shared_ptr) will have NULL pointer
+    //        if(pcl::io::loadPCDFile<GraphSLAM::ScanDataType::PointType>(pcd_name, *cloud)<0){
+    //            logger->logMessage((std::string("Failed to read ")+pcd_name).c_str());
+    //            cloud.reset();
+    //        }
+    //        //on a reading failure, cloud(shared_ptr) will have NULL pointer
 
-//        graph_slam.addVertex(pos, cloud, true);
-//        if(id1 == -1){
-//            graph_slam.setVertexFixed(0, true);
-//        }else{
-//            int n = graph_slam.nVertices();
-//            graph_slam.addEdgeFromVertices(n-2, n-1, info);
-//        }
-//    }
+    //        graph_slam.addVertex(pos, cloud, true);
+    //        if(id1 == -1){
+    //            graph_slam.setVertexFixed(0, true);
+    //        }else{
+    //            int n = graph_slam.nVertices();
+    //            graph_slam.addEdgeFromVertices(n-2, n-1, info);
+    //        }
+    //    }
 }
 
 void MainWindow::resetMessage()
@@ -149,8 +151,8 @@ void MainWindow::on_pushButton_Reset_clicked()
 void MainWindow::on_pushButton_ClearLoopClosings_clicked()
 {
     auto reply= QMessageBox::question(this, "Clearing Loop Closing",
-                                  "Do you want to remove all loop closures?",
-                                  QMessageBox::Yes|QMessageBox::No);
+                                      "Do you want to remove all loop closures?",
+                                      QMessageBox::Yes|QMessageBox::No);
     if(reply == QMessageBox::Yes){
         graph_slam.resetLoopClosings();
     }
@@ -163,7 +165,7 @@ void MainWindow::on_action_Save_As_G2O_triggered()
     //    file_dlg.setModal(true);
     //    if(file_dlg.exec()){
     //        QDir db = file_dlg.directory();
-      QDir db(QDir::homePath()+"/manual_slam_db");
+    QDir db(QDir::homePath()+"/manual_slam_db");
     QString file_name = QFileDialog::getSaveFileName(this, "Save as", db.path(), "*.g2o");
     if(file_name.size()){
         logger->logMessage((QString("Saving pose graph in ")+file_name).toStdString().c_str());
@@ -183,7 +185,7 @@ void MainWindow::slot_graphTableDialogClosed()
     QObject::disconnect(&graph_slam, SIGNAL(graphTableUpdated(GraphTableData*)),
                         graph_table_dialog, SLOT(setGraphTable(GraphTableData*)));
     QObject::disconnect(&graph_slam, SIGNAL(edgesSelected(QList<int>,QList<int>)),
-                     graph_table_dialog, SLOT(selectEdges(QList<int>,QList<int>)));
+                        graph_table_dialog, SLOT(selectEdges(QList<int>,QList<int>)));
 
     this->graph_table_dialog = NULL;
 }
@@ -274,4 +276,57 @@ void MainWindow::slot_autoSave()
     graph_slam.saveAsG2O(file_name);
     QString msg = "auto save to "+file_name;
     logger->logMessage(msg.toStdString().c_str());
+}
+
+void generateClusters(const QList<int>& input,  QVector<QVector<int>>& clusters){
+    auto sel = input;
+    qSort(sel.begin(), sel.end());
+    int prev = -1000;
+    for(const auto&a:sel){
+        if(a-prev > 5){
+            clusters.push_back(QVector<int>());
+        }
+        clusters.back().push_back(a);
+        prev = a;
+    }
+#ifdef USE_CONSOLE_DEBUG
+    std::cerr<<clusters.size()<<" clusters are generated."<<std::endl;
+#endif
+}
+
+void MainWindow::on_pushButton_ManualLoopClosing_clicked()
+{
+    auto selections = ui->widget_CloudViewer->getSelections();
+    if(selections.size() < 2){
+        logger->logMessage("Please, choose at least 2 vertices.");
+        return;
+    }
+    QVector<QVector<int>> clusters;
+    generateClusters(selections, clusters);
+    if(clusters.size() != 2){
+        logger->logMessage(QString("2 clusters are needed.(%1 generated)").arg(clusters.size()).toStdString().c_str());
+        return;
+    }
+    qSort(clusters[0].begin(), clusters[0].end());
+    qSort(clusters[1].begin(), clusters[1].end());
+    auto cloud_model = graph_slam.getCompositedPointCloudDisplayer(clusters[0]);
+    auto cloud_template = graph_slam.getCompositedPointCloudDisplayer(clusters[1]);
+
+    ICPDialog icp_dialog;
+    icp_dialog.setModelCloud(cloud_model);
+    icp_dialog.setTemplateCloud(cloud_template);
+    icp_dialog.initialize();
+    icp_dialog.setModal(true);
+    if(icp_dialog.exec()){
+        qglviewer::Frame icp_result =  icp_dialog.getICPResult();
+        std::ostringstream oss;
+        oss<<"ICP Result : \n"<<std::endl;
+        oss<<"\tPosition : "<<icp_result.position()<<std::endl;
+        oss<<"\tOrientation : "<<icp_result.orientation()<<std::endl;
+        logger->logMessage(oss.str().c_str());
+        g2o::EdgeSE3::InformationType info;
+        info.setIdentity();
+        graph_slam.addLoopClosing(clusters[0][0], clusters[1][0],
+                QGLHelper::toPosTypesPose3D(icp_result), info);
+    }
 }

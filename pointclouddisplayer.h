@@ -21,13 +21,11 @@ public:
                         const GLdouble& alpha);
     void drawFrame(const bool& selected);
 
-
     void copyXYZTo(std::vector<double>& output);
     void pushBack(const CloudDataType& p);
     CloudDataType getPoint(size_t i) const;
     size_t nPoints() const;
 
-//    size_t n_points;
     qglviewer::Frame frame;
     CloudDataType data;
     int start;//index of the beginning of xyz fields.

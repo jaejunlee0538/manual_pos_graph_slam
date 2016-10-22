@@ -17,16 +17,15 @@ class CloudViewer: public QGLViewer
 {
     Q_OBJECT
 public:
-    typedef  QVector<PointCloudDisplayer::Ptr> PointCloudDisplayerVector;
-
     CloudViewer(QWidget* parent);
     const QList<int>& getSelections() const{
         return selections;
     }
+
+    void getPointCloudDisplayerPtrs(const QVector<int>& indices, QVector<PointCloudDisplayer::Ptr>& out);
 public Q_SLOTS:
     void setGraphDisplayer(GraphDisplayer::Ptr graph);
     void setPointCloudDisplayers(QVector<PointCloudDisplayer::Ptr> clouds);
-    void slot_manualLoopClosing();
     void slot_setPointAlpha(const double& alpha_point_cloud);
     void slot_setPointSize(const double& point_size);
     void slot_clearSelections();
@@ -41,8 +40,7 @@ Q_SIGNALS:
     void searchLoopClosings(std::vector<int> idxOld,
                             std::vector<int> idxNew,
                             qglviewer::Frame trNew);
-    void loopClosingAdded(const int& vi, const int& vj, const PosTypes::Pose3D& data ,const g2o::EdgeSE3::InformationType& info_mat);
-    void verticesSelected(const QList<int>& vertices_id);
+     void verticesSelected(const QList<int>& vertices_id);
 
 protected:
     virtual void init();

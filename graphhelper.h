@@ -21,6 +21,12 @@ void convertSE3To4x4Matrix(const g2o::VertexSE3::EstimateType &in, RealType *out
 
 void convertSE3ToqglviewerFrame(const g2o::VertexSE3::EstimateType &in, qglviewer::Frame &out);
 
+template <typename RealType>
+void convertEdgeSE3To4X4Matrix(const g2o::EdgeSE3::Measurement& measurement, RealType* out);
+
+void convertEdgeSE3ToqglviewerFrame(const g2o::EdgeSE3::Measurement &in, qglviewer::Frame &out);
+
+void setInformationMatrixDiagonal(g2o::EdgeSE3::InformationType& info, const double& v);
 };
 
 
@@ -32,6 +38,17 @@ void convertSE3To4x4Matrix(const g2o::VertexSE3::EstimateType &in, RealType *out
     for(size_t irow = 0;irow<4;irow++){
         for(size_t icol=0;icol<4;icol++){
             out[4*icol+irow] = vm(irow, icol);
+        }
+    }
+}
+
+template <typename RealType>
+void convertEdgeSE3To4X4Matrix(const g2o::EdgeSE3::Measurement& measurement, RealType* out){
+//    g2o::VertexSE3::EstimateType::MatrixType vm = measurement.
+    Eigen::Isometry3d::MatrixType m = measurement.matrix();
+    for(size_t irow = 0;irow<4;irow++){
+        for(size_t icol=0;icol<4;icol++){
+            out[4*icol+irow] = m(irow, icol);
         }
     }
 }

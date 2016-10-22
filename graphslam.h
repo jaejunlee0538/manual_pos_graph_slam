@@ -45,6 +45,7 @@ public:
     void sendGraph();
     void sendPointCloud();
     bool initialized()const;
+    PointCloudDisplayer::Ptr getCompositedPointCloudDisplayer(QVector<int> vertices);
 public Q_SLOTS:
     void reset();
     void resetLoopClosings();
@@ -64,7 +65,6 @@ public Q_SLOTS:
     void removeEdge(const g2o::EdgeSE3* e);
     void removeEdges(QList<const g2o::EdgeSE3*> es);
     void modifyEdges(const EdgeModifications& modifications);
-
 Q_SIGNALS:
     void graphDisplayUpdated(GraphDisplayer::Ptr graph);
     void graphTableUpdated(GraphTableData* graph_table_model);
@@ -81,6 +81,7 @@ public Q_SLOTS:
 protected:
     void loadPCDFiles();
     void initG2OGraph();
+    g2o::EdgeSE3::Measurement getMotionConstraintBetweenVertices(int vi, int vj);
 protected:
     std::shared_ptr<g2o::SparseOptimizer> m_g2o_graph;
     QVector<g2o::VertexSE3*> m_vertices;

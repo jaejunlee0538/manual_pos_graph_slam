@@ -2,26 +2,29 @@
 #include "manipulatedframesetconstraint.h"
 #include <QMouseEvent>
 #include "standardcamera.h"
-
+#include <icpdialog.h>
 #include "QGLHelper.h"
-#include "Logger.h"
 #define USE_CONSOLE_DEBUG
 using namespace qglviewer;
+void generateClusters(const QList<int>& input,  QVector<QVector<int>>& clusters){
+    auto sel = input;
+    qSort(sel.begin(), sel.end());
+    int prev = -1000;
+    for(const auto&a:sel){
+        if(a-prev > 5){
+            clusters.push_back(QVector<int>());
+        }
+        clusters.back().push_back(a);
+        prev = a;
+    }
+#ifdef USE_CONSOLE_DEBUG
+    std::cerr<<clusters.size()<<" clusters are generated."<<std::endl;
+#endif
+}
 
 CloudViewer::CloudViewer(QWidget *parent):
     QGLViewer(parent),clouds_visible_all(true){
 
-}
-
-void CloudViewer::getPointCloudDisplayerPtrs(const QVector<int> &indices, QVector<PointCloudDisplayer::Ptr>& out)
-{
-    for(const auto& i:indices){
-        if(i>=clouds.size() || i < 0){
-            std::cerr<<CONSOLE_WRITE_RED<<"index out of range["<<Q_FUNC_INFO<<"]"<<CONSOLE_WRITE_RED_END<<std::endl;
-            continue;
-        }
-        out.push_back(clouds[i]);
-    }
 }
 
 void CloudViewer::setGraphDisplayer(GraphDisplayer::Ptr graph){
@@ -35,6 +38,61 @@ void CloudViewer::setPointCloudDisplayers(QVector<PointCloudDisplayer::Ptr> clou
     this->clouds = clouds;
     initPointCloudVisibleVector();
     updateGL();
+}
+
+void CloudViewer::slot_manualLoopClosing(){
+#if 0
+    if(selections.size() == 2){
+        ICPDialog icp_dialog;
+        auto sel = selections;
+        qSort(sel.begin(), sel.end());
+        icp_dialog.setInputClouds(*clouds[sel[0]],* clouds[sel[1]]);
+        icp_dialog.setModal(true);
+        if(icp_dialog.exec()){
+            qglviewer::Frame icp_result =  icp_dialog.getICPResult();
+            g2o::EdgeSE3::InformationType info;
+            info.setIdentity();
+            Q_EMIT loopClosingAdded(sel[0], sel[1], QGLHelper::toPosTypesPose3D(icp_result), info);
+        }
+    }else{
+        logger->logMessage("Please, choose only 2 vertices to perform ICP.");
+    }
+#else
+    if(selections.size() < 2){
+        logger->logMessage("Please, choose at least 2 vertices.");
+        return;
+    }
+    QVector<QVector<int>> clusters;
+    generateClusters(selections, clusters);
+
+    if(clusters.size() != 2){
+        logger->logMessage(QString("2 clusters are needed.(%1 generated)").arg(clusters.size()).toStdString().c_str());
+        return;
+    }
+    PointCloudDisplayerVector cloud_pts[2];
+    for(size_t i=0;i<2;i++){
+        for(const auto& idx:clusters[i]){
+            cloud_pts[i].push_back(this->clouds[idx]);
+        }
+    }
+
+    ICPDialog icp_dialog;
+    icp_dialog.setModelClouds(cloud_pts[0]);
+    icp_dialog.setTemplateClouds(cloud_pts[1]);
+    icp_dialog.initialize();
+    icp_dialog.setModal(true);
+    if(icp_dialog.exec()){
+        qglviewer::Frame icp_result =  icp_dialog.getICPResult();
+        std::ostringstream oss;
+        oss<<"ICP Result : \n"<<std::endl;
+        oss<<"\tPosition : "<<icp_result.position()<<std::endl;
+        oss<<"\tOrientation : "<<icp_result.orientation()<<std::endl;
+        logger->logMessage(oss.str().c_str());
+        g2o::EdgeSE3::InformationType info;
+        info.setIdentity();
+        Q_EMIT loopClosingAdded(clusters[0][0], clusters[1][0], QGLHelper::toPosTypesPose3D(icp_result), info);
+    }
+#endif
 }
 
 void CloudViewer::slot_setPointAlpha(const double &alpha_point_cloud){
@@ -112,7 +170,11 @@ void CloudViewer::draw(){
         for(size_t i=0;i<clouds.size();i++){
             bool selected = selections.contains(i);
             if(clouds_visible_all&&clouds_visible[i]){
+<<<<<<< HEAD
                 clouds[i]->drawPointCloud(selected, size_points, alpha_points);
+=======
+                clouds[i]->drawPointCloud(selected, size_points,alpha_points);
+>>>>>>> 92e79116353624cd46b5095cf37b6c7ad5c83b27
             }
             clouds[i]->drawFrame(selected);
         }

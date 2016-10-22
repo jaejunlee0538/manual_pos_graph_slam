@@ -14,6 +14,7 @@
 #include "exceptions.h"
 #include <g2o/core/factory.h>
 #include <map>
+#include "graphhelper.h"
 
 #define GRAPH_SLAM_DEBUG
 
@@ -99,6 +100,9 @@ void GraphSLAM::loadFromG2ODB(const QDir &db_dir)
 #ifdef GRAPH_SLAM_DEBUG
     std::cerr<<"Copying edges"<<std::endl;
 #endif
+
+    //the number of motion edges is determined by the number of vertices.
+    m_motion_edges.resize(m_vertices.size()-1);
     for(const auto& ev:m_g2o_graph->edges()){
         g2o::EdgeSE3* e_se3 = dynamic_cast<g2o::EdgeSE3*>(ev);
         if(e_se3 == NULL){
@@ -108,7 +112,12 @@ void GraphSLAM::loadFromG2ODB(const QDir &db_dir)
         if(abs(e_se3->vertex(1)->id() - e_se3->vertex(0)->id()) > 1){
             m_loop_edges.push_back(e_se3);
         }else{
-            m_motion_edges.push_back(e_se3);
+            int v_id = e_se3->vertex(0)->id();
+            if(v_id >= m_motion_edges.size()){
+                throw std::runtime_error("Invliad motion edge.");
+            }
+            m_motion_edges[v_id] = e_se3;
+            //            m_motion_edges.push_back(e_se3);
         }
     }
 
@@ -133,17 +142,17 @@ void GraphSLAM::loadFromG2ODB(const QDir &db_dir)
     }
 
 
-        if(m_g2o_graph->gaugeFreedom()){
-              setVertexFixed(0,true);
-//            auto gauge = m_g2o_graph->findGauge();
-//            if(gauge == NULL){
-//                throw std::runtime_error("Cannot find a vertex to fix.");
-//            }
-//            gauge->setFixed(true);
-//    #ifdef GRAPH_SLAM_DEBUG
-//            std::cerr<<QString("Set vertex %1 fixed.").arg(gauge->id()).toStdString()<<std::endl;
-//    #endif
-        }
+    if(m_g2o_graph->gaugeFreedom()){
+        setVertexFixed(0,true);
+        //            auto gauge = m_g2o_graph->findGauge();
+        //            if(gauge == NULL){
+        //                throw std::runtime_error("Cannot find a vertex to fix.");
+        //            }
+        //            gauge->setFixed(true);
+        //    #ifdef GRAPH_SLAM_DEBUG
+        //            std::cerr<<QString("Set vertex %1 fixed.").arg(gauge->id()).toStdString()<<std::endl;
+        //    #endif
+    }
 }
 
 bool GraphSLAM::saveAsG2O(const QString fname)
@@ -196,6 +205,7 @@ bool GraphSLAM::addEdgeFromVertices(const int &vi, const int &vj,
     }else{
         m_loop_edges.push_back(e);
     }
+
     return true;
 }
 
@@ -338,6 +348,59 @@ void GraphSLAM::sendPointCloud()
 bool GraphSLAM::initialized() const
 {
     return !m_vertices.empty();
+}
+
+g2o::EdgeSE3::Measurement GraphSLAM::getMotionConstraintBetweenVertices(int vi,  int vj)
+{
+    if(vi > vj){
+        throw std::runtime_error("vi must be less or equal than vj");
+    }
+    g2o::EdgeSE3::Measurement constraint;
+    constraint.setIdentity();
+    for(int i=vi;i<vj;i++){
+        constraint = constraint *  m_motion_edges[i]->measurement();
+    }
+    return constraint;
+}
+
+PointCloudDisplayer::Ptr GraphSLAM::getCompositedPointCloudDisplayer(QVector<int> vertices)
+{
+    PointCloudDisplayer::Ptr cloud(new PointCloudDisplayer());
+    cloud->fields = {"x","y","z","intensity"};
+    cloud->start = 0;
+
+    GraphHelper::convertSE3ToqglviewerFrame(m_vertices[vertices[0]]->estimate(), cloud->frame);
+
+    g2o::EdgeSE3::Measurement msr;
+    qglviewer::Frame frame;
+    msr.setIdentity();
+
+    PointCloudDisplayer::CloudDataType point;
+    point.resize(4);//x,y,z,intensity;
+
+    for(const auto p:*(m_scan_data[vertices[0]])){
+        point[0] = p.x;            point[1] = p.y;            point[2] = p.z;
+        point[3] = p.intensity;
+        cloud->pushBack(point);
+    }
+    qglviewer::Frame origin;
+    origin.setPosition(0,0,0);
+    origin.setOrientation(0,0,0,1);
+
+    frame.setReferenceFrame(&origin);
+    for(int i=1;i<vertices.size();i++){
+        msr = msr * getMotionConstraintBetweenVertices(vertices[i-1], vertices[i]);
+        GraphHelper::convertEdgeSE3ToqglviewerFrame(msr, frame);
+
+        for(const auto p:*(m_scan_data[vertices[i]])){
+            qglviewer::Vec pv(p.x, p.y, p.z);
+            pv = frame.coordinatesOfIn(pv,&origin);
+            point[0] = pv[0];            point[1] = pv[1];            point[2] = pv[2];
+            point[3] = p.intensity;
+            cloud->pushBack(point);
+        }
+    }
+    return cloud;
 }
 
 void GraphSLAM::slot_selectVertices(const QList<int> &vertices_id, bool select_edges)
