@@ -48,6 +48,7 @@ void MainWindow::init()
 
 void MainWindow::loadGraphFromPCDDatabase(const QDir &db_dir)
 {
+
     //    db_dir.entryList({"*.pcd"},QDir::Files, QDir::Name);
     //    QString motion(db_dir.path()+"/motion.txt");
 
@@ -329,4 +330,30 @@ void MainWindow::on_pushButton_ManualLoopClosing_clicked()
         graph_slam.addLoopClosing(clusters[0][0], clusters[1][0],
                 QGLHelper::toPosTypesPose3D(icp_result), info);
     }
+}
+
+void MainWindow::on_action2D_Project_triggered()
+{
+//TODO : let's change this to QVector<int>"
+    auto tmp = ui->widget_CloudViewer->getSelections();
+    if(tmp.empty()){
+        return;
+    }
+    QVector<int> selected;
+    for(auto i:selections){
+        selected.push_back(i);
+    }
+    qSort(selected);
+
+    QVector<PointCloudDisplayer::Ptr> clouds;
+    graph_slam.getPointCloudDisplayers(selected, clouds);
+
+    qglviewer::Frame origin;
+    origin.setOrientation(0,0,0,1);
+    origin.setPosition(clouds[0]->frame.position());
+    for(int i=0;i<clouds.size();i++){
+        PointCloudDisplayer::Ptr cloud_ptr = clouds[i];
+        TransformPointCloudDisplayer(*cloud_ptr, origin);
+    }
+
 }

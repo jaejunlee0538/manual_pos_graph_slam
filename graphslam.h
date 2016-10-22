@@ -46,6 +46,7 @@ public:
     void sendPointCloud();
     bool initialized()const;
     PointCloudDisplayer::Ptr getCompositedPointCloudDisplayer(QVector<int> vertices);
+    void getPointCloudDisplayers(const QVector<int>& vertices, QVector<PointCloudDisplayer::Ptr>& cloud_out);
 public Q_SLOTS:
     void reset();
     void resetLoopClosings();

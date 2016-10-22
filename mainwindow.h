@@ -47,6 +47,8 @@ private Q_SLOTS://because of no_keywords flag, we have to use Q_SLOTS instead of
     void slot_autoSave();
     void on_pushButton_ManualLoopClosing_clicked();
 
+    void on_action2D_Project_triggered();
+
 Q_SIGNALS:
     void loopClosingAdded(const int& vi, const int& vj, const PosTypes::Pose3D& data ,const g2o::EdgeSE3::InformationType& info_mat);
 

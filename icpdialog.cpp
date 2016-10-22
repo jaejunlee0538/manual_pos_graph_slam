@@ -72,6 +72,9 @@ void ICPDialog::initialize()
     clouds[0]->frame.setPosition(0,0,0);
     original = clouds[1]->frame;
     ui->widget_cloudViewer->setPointCloudDisplayers({clouds[0], clouds[1]});
+    ui->widget_cloudViewer->slot_setPointSize(1.0);
+    ui->widget_cloudViewer->slot_setPointAlpha(0.8);
+
 }
 
 qglviewer::Frame ICPDialog::getICPResult()

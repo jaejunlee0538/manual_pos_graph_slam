@@ -403,6 +403,33 @@ PointCloudDisplayer::Ptr GraphSLAM::getCompositedPointCloudDisplayer(QVector<int
     return cloud;
 }
 
+void GraphSLAM::getPointCloudDisplayers(const QVector<int> &vertices, QVector<PointCloudDisplayer::Ptr> &cloud_out)
+{
+    cloud_out.resize(vertices.size());
+    for(size_t i=0; i<vertices.size();i++){
+        cloud_out[vertices[i]].reset(new PointCloudDisplayer());
+        GraphHelper::convertSE3ToqglviewerFrame(m_vertices[vertices[i]]->estimate(), cloud_out[i]->frame);
+        if(m_scan_data[i]){
+            cloud_out[i]->fields = {"x","y","z","intensity"};
+            cloud_out[i]->start = 0;
+            size_t n_pts = m_scan_data[i]->height*m_scan_data[i]->width;
+            cloud_out[i]->data.resize(4*n_pts);
+            size_t n_valid = 0;
+            for(size_t k=0;k<n_pts;k++){
+                if(pcl::isFinite(m_scan_data[i]->points[k])){
+                    size_t idx = n_valid * 4;
+                    cloud_out[i]->data[idx] = m_scan_data[i]->points[k].x;
+                    cloud_out[i]->data[idx+1] = m_scan_data[i]->points[k].y;
+                    cloud_out[i]->data[idx+2] = m_scan_data[i]->points[k].z;
+                    cloud_out[i]->data[idx+3] = m_scan_data[i]->points[k].intensity;
+                    n_valid++;
+                }
+            }
+            cloud_out[i]->data.resize(n_valid*4);
+        }
+    }
+}
+
 void GraphSLAM::slot_selectVertices(const QList<int> &vertices_id, bool select_edges)
 {
     DEBUG_FUNC_STAMP;

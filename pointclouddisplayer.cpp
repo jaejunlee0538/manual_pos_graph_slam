@@ -111,3 +111,21 @@ PointCloudDisplayer::CloudDataType PointCloudDisplayer::getPoint(size_t i) const
 size_t PointCloudDisplayer::nPoints() const{
     return data.size() / fields.size();
 }
+
+
+void TransformPointCloudDisplayer(PointCloudDisplayer &cloud, const qglviewer::Frame &reference)
+{
+    int start = cloud.start;
+    int step = cloud.fields.size();
+    size_t npts = cloud.nPoints();
+    qglviewer::Vec p;
+    for(size_t i=0;i<npts;i++){
+        int idx = step * i;
+        p.setValue(cloud.data[idx], cloud.data[idx+1], cloud.data[idx+2]);
+        p = cloud.frame.coordinatesOfIn(p, &reference);
+        cloud.data[idx] = p[0];
+        cloud.data[idx+1] = p[1];
+        cloud.data[idx+2] = p[2];
+    }
+    cloud.frame.setReferenceFrame(reference.referenceFrame());
+}

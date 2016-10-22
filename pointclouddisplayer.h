@@ -32,8 +32,9 @@ public:
     std::vector<std::string> fields;//how many fields does a point have?
     bool selectable;
 protected:
-
 };
+
+void TransformPointCloudDisplayer(PointCloudDisplayer& cloud, const qglviewer::Frame& reference);
 
 
 #endif // POINTCLOUDDISPLAYER_H
