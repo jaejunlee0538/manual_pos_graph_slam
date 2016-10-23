@@ -40,7 +40,9 @@ SOURCES += main.cpp\
     graphtablemodel.cpp \
     graphtabledialog.cpp \
     matrixmanipulator.cpp \
-    edgemanipulator.cpp
+    edgemanipulator.cpp \
+    matrixtablemodel.cpp \
+    edgemodification.cpp
 
 HEADERS  += mainwindow.h \
     cloudviewer.h\
@@ -61,7 +63,9 @@ HEADERS  += mainwindow.h \
     graphtablemodel.h \
     graphtabledialog.h \
     matrixmanipulator.h \
-    edgemanipulator.h
+    edgemanipulator.h \
+    matrixtablemodel.h \
+    edgemodification.h
 
 unix {
 #        CONFIG -= debug debug_and_release

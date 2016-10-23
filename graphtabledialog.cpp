@@ -8,11 +8,11 @@ GraphTableDialog::GraphTableDialog(QWidget *parent) :
     ui(new Ui::GraphTableDialog),
     m_graph_table(nullptr)
 {
-        DEBUG_FUNC_STAMP;
     ui->setupUi(this);
 
     //delete this dialog when ESC key or 'X' button is pressed.
     this->setAttribute(Qt::WA_DeleteOnClose);
+
     QObject::connect(
                 ui->widget_LoopEdgesManipulator, SIGNAL(edgesShouldBeModified(EdgeModifications)),
                 this, SLOT(slot_ModifyEdges(EdgeModifications)));
@@ -26,13 +26,11 @@ GraphTableDialog::GraphTableDialog(QWidget *parent) :
 
 GraphTableDialog::~GraphTableDialog()
 {
-        DEBUG_FUNC_STAMP;
     delete ui;
 }
 
 void GraphTableDialog::setGraphTable(GraphTableData *graph_table)
 {
-        DEBUG_FUNC_STAMP;
     if(graph_table == nullptr){
         return;
     }
@@ -47,28 +45,23 @@ void GraphTableDialog::setGraphTable(GraphTableData *graph_table)
 
 void GraphTableDialog::selectVertices(const QList<int>& vertices)
 {
-        DEBUG_FUNC_STAMP;
-        DEBUG_MUST_NOT_RUN;
+       RED_MESSAGE("This method is not implemented!");
     //TODO
 }
 
 void GraphTableDialog::selectEdges(const QList<int> &motion_edges, const QList<int> &loop_edges)
 {
-    DEBUG_FUNC_STAMP;
-    DEBUG_MUST_NOT_RUN;
     ui->widget_MotionEdgeManipulator->selectRows(motion_edges);
     ui->widget_LoopEdgesManipulator->selectRows(loop_edges);
 }
 
 void GraphTableDialog::slot_ModifyEdges(const EdgeModifications &modifications)
 {
-        DEBUG_FUNC_STAMP;
     Q_EMIT edgesShouldBeModified(modifications);
 }
 
 void GraphTableDialog::slot_RemoveEdges(const QList<const g2o::EdgeSE3 *> &edges_to_remove)
 {
-        DEBUG_FUNC_STAMP;
     Q_EMIT edgesShouldBeRemoved(edges_to_remove);
 }
 

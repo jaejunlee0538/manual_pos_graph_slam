@@ -3,6 +3,7 @@
 #include "Logger.h"
 #include <g2o/core/robust_kernel_factory.h>
 #include <g2o/core/robust_kernel_impl.h>
+#include "graphhelper.h"
 #define EDGE_MANIPULATOR_CONSOLE_DEBUG
 namespace g2o{
 static g2o::RegisterRobustKernelProxy<RobustKernelHuber> robust_kernel_register_Huber("Huber");
@@ -28,8 +29,8 @@ EdgeManipulator::EdgeManipulator(QWidget *parent) :
         ui->comboBox_RobustKernel->addItem(QString(kernel.c_str()));
     }
     ui->comboBox_RobustKernel->setCurrentIndex(0);
-    QObject::connect(ui->widget_MatrixManipulator, SIGNAL(matrixModified(g2o::EdgeSE3::InformationType)),
-                     this, SLOT(slot_changeInformationMatrix(g2o::EdgeSE3::InformationType)));
+    QObject::connect(ui->widget_MatrixManipulator, SIGNAL(matrixModified(GeneralMatrixType)),
+                     this, SLOT(slot_changeInformationMatrix(GeneralMatrixType)));
 }
 
 EdgeManipulator::~EdgeManipulator()
@@ -81,14 +82,14 @@ void EdgeManipulator::on_pushButton_Delete_clicked()
 #endif
         return;
     }
-    QList<const g2o::EdgeSE3*> edges_to_remove;
+    QList<const g2o::OptimizableGraph::Edge*> edges_to_remove;
     for(size_t i=0;i<selected_row.size();i++){
         edges_to_remove.push_back(edge_table->at(selected_row[i].row()));
     }
     Q_EMIT edgesShouldBeRemoved(edges_to_remove);
 }
 
-void EdgeManipulator::slot_changeInformationMatrix(const g2o::EdgeSE3::InformationType &new_mat)
+void EdgeManipulator::slot_changeInformationMatrix(const GeneralMatrixType &new_mat)
 {
 //    DEBUG_FUNC_STAMP;
     QModelIndexList selected_row = ui->tableView_Edges->selectionModel()->selectedRows();
@@ -117,11 +118,11 @@ void EdgeManipulator::updateSelections(QItemSelection selected, QItemSelection d
 #endif
         return;
     }
-    QList<g2o::EdgeSE3::InformationType> matrices;
-    g2o::EdgeSE3::InformationType m;
-
+    QVector<GeneralMatrixType> matrices;
+    GeneralMatrixType m;
     for(size_t i=0;i<selected_row.size();i++){
-        matrices.push_back(edge_table->at(selected_row[i].row())->information());
+        GraphHelper::getInformationMatrix(edge_table->at(selected_row[i].row()), m);
+        matrices.push_back(m);
     }
     ui->widget_MatrixManipulator->setMatrices(matrices);
 }

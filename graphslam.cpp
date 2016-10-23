@@ -5,6 +5,7 @@
 #include <g2o/core/optimization_algorithm_levenberg.h>
 #include <g2o/core/robust_kernel_factory.h>
 #include <g2o/core/block_solver.h>
+#include <g2o/types/slam2d/types_slam2d.h>
 #include <Global.h>
 #include <string>
 #include <pcl/PCLPointField.h>
@@ -24,7 +25,8 @@ namespace __private{
 //Each Vertex/Edge types must be registered in g2o::Factory(singleton) beforehand.
 g2o::RegisterTypeProxy<g2o::VertexSE3> register_vertex_se3("VERTEX_SE3:QUAT");
 g2o::RegisterTypeProxy<g2o::EdgeSE3> register_edge_se3("EDGE_SE3:QUAT");
-
+g2o::RegisterTypeProxy<g2o::VertexSE2> register_vertex_se2("VERTEX_SE2");
+g2o::RegisterTypeProxy<g2o::EdgeSE2> register_edge_se2("EDGE_SE2");
 }
 GraphSLAM::GraphSLAM()
 {
@@ -248,9 +250,9 @@ void GraphSLAM::modifyEdges(const EdgeModifications &modifications)
     std::ostringstream oss;
     oss<<"Edges ";
     for(EdgeModifyAction::Ptr mod:modifications){
-        g2o::EdgeSE3* edge = const_cast<g2o::EdgeSE3*>(mod->getEdge());
+        auto* edge = const_cast<g2o::OptimizableGraph::Edge*>(mod->getEdge());
         oss<<"["<<edge->vertex(0)->id()<<"->"<<edge->vertex(1)->id()<<"] ";
-        mod->action(const_cast<g2o::EdgeSE3*>(mod->getEdge()));
+        mod->action(edge);
     }
     oss<<" modified.";
     logger->logMessage(oss.str().c_str());

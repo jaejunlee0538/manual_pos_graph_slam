@@ -67,4 +67,18 @@ void convertEdgeSE3ToqglviewerFrame(const g2o::EdgeSE3::Measurement &in, qglview
     out.setFromMatrix(m);
 }
 
+void getInformationMatrix(const g2o::OptimizableGraph::Edge *e, GeneralMatrixType &m)
+{
+    int dim = e->dimension();
+    m.resize(dim,dim);
+    const double* data = e->informationData();
+
+    //Assuming column major order
+    for(int i=0;i<dim;i++){
+        for(int j=0;j<dim;j++){
+            m(j,i) = data[i*dim+j];
+        }
+    }
+}
+
 }

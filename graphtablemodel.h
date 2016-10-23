@@ -24,9 +24,9 @@ public:
     typedef std::shared_ptr<EdgeTableModel> Ptr;
 public:
     EdgeTableModel();
-    void pushBack(const g2o::EdgeSE3* edge);
+    void pushBack(const g2o::OptimizableGraph::Edge* edge);
     void clear();
-    const g2o::EdgeSE3 *at(int irow) const;
+    const g2o::OptimizableGraph::Edge *at(int irow) const;
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
     int columnCount(const QModelIndex &parent= QModelIndex()) const;
     QVariant data(const QModelIndex &index, int role) const;
@@ -34,7 +34,7 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const;
     bool setData(const QModelIndex &index, const QVariant &value, int role);
 protected:
-    QVector<const g2o::EdgeSE3*> edges_se3;
+    QVector<const g2o::OptimizableGraph::Edge*> edges_se3;
 };
 
 class GraphTableData{

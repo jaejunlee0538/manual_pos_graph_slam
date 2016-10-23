@@ -19,7 +19,7 @@ public:
         t_EdgeDisplayType(int vi, int vj):vi(vi), vj(vj){}
     };
     struct t_VertexDisplayType{
-        GLdouble m[16];
+        GLdouble m[16];//tranformation matrix for 3D
         t_VertexDisplayType(){}
 
         t_VertexDisplayType(double* data){

@@ -1,6 +1,6 @@
 #include "graphtablemodel.h"
 #include <sstream>
-
+#include <g2o/types/slam2d/types_slam2d.h>
 QString vectorTostring(const QVector<double>& vec){
     if(vec.empty()){
         return QString("");
@@ -18,7 +18,7 @@ EdgeTableModel::EdgeTableModel()
 
 }
 
-void EdgeTableModel::pushBack(const g2o::EdgeSE3 *edge)
+void EdgeTableModel::pushBack(const g2o::OptimizableGraph::Edge *edge)
 {
     edges_se3.push_back(edge);
 }
@@ -28,7 +28,7 @@ void EdgeTableModel::clear()
     edges_se3.clear();
 }
 
-const g2o::EdgeSE3 *EdgeTableModel::at(int irow) const
+const g2o::OptimizableGraph::Edge *EdgeTableModel::at(int irow) const
 {
     return edges_se3[irow];
 }
@@ -47,7 +47,7 @@ int EdgeTableModel::columnCount(const QModelIndex &parent) const
 QVariant EdgeTableModel::data(const QModelIndex &index, int role) const
 {
     if(role == Qt::DisplayRole || role == Qt::EditRole){
-        const g2o::EdgeSE3* edge = edges_se3[index.row()];
+        const g2o::OptimizableGraph::Edge* edge = edges_se3[index.row()];
         switch(index.column()){
         case 0:                 return QVariant(edge->id());
         case 1:                 return QVariant(edge->vertex(0)->id());
@@ -60,7 +60,7 @@ QVariant EdgeTableModel::data(const QModelIndex &index, int role) const
         }
         case 4:
         {
-            int dim = edge->information().rows();
+            int dim = edge->dimension();
             QVector<double> info(dim*dim);
             edge->informationData();
             std::copy(edge->informationData(), edge->informationData()+dim*dim, info.begin());

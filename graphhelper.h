@@ -1,5 +1,6 @@
 #ifndef G2O_QGL_HELPER_H
 #define G2O_QGL_HELPER_H
+#include "Global.h"
 #include <QGLViewer/qglviewer.h>
 #include <g2o/types/slam3d/types_slam3d.h>
 #include "postypes.h"
@@ -27,6 +28,8 @@ void convertEdgeSE3To4X4Matrix(const g2o::EdgeSE3::Measurement& measurement, Rea
 void convertEdgeSE3ToqglviewerFrame(const g2o::EdgeSE3::Measurement &in, qglviewer::Frame &out);
 
 void setInformationMatrixDiagonal(g2o::EdgeSE3::InformationType& info, const double& v);
+
+void getInformationMatrix(const g2o::OptimizableGraph::Edge* e, GeneralMatrixType& m);
 };
 
 
