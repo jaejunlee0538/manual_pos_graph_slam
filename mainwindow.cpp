@@ -426,7 +426,8 @@ void MainWindow::on_action2D_Project_triggered()
 #ifdef MAIN_WINDOW_CONSOLE_DEBUG
     std::cerr<<"Writing file..."<<std::endl;
 #endif
-    std::ofstream file("/home/ub1404/incheon_map.pgm", std::ios_base::out|std::ios_base::binary|std::ios_base::trunc);
+    QString file_name = QDir::home().path()+"/manual_slam_intensity_map.pgm";
+    std::ofstream file(file_name.toStdString().c_str(), std::ios_base::out|std::ios_base::binary|std::ios_base::trunc);
     file<<"P5\n"<<width<<" "<<height<<"\n"<<255<<"\n";
     for(size_t iy=height;iy>0;iy--){
         for(size_t ix=0;ix<width;ix++){

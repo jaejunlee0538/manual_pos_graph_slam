@@ -5,7 +5,7 @@
 #include "QGLHelper.h"
 #include <libicp/icpPointToPlane.h>
 #include <libicp/icpPointToPoint.h>
-//#define USE_CONSOLE_DEBUG
+#define ICP_DIALOG_CONSOLE_DEBUG
 
 
 
@@ -84,7 +84,7 @@ qglviewer::Frame ICPDialog::getICPResult()
 
 void ICPDialog::on_pushButton_DoICP_clicked()
 {
-#ifdef USE_CONSOLE_DEBUG
+#ifdef ICP_DIALOG_CONSOLE_DEBUG
     std::cerr<<"Do ICP clicked"<<std::endl;
 #endif
 
@@ -96,6 +96,9 @@ void ICPDialog::on_pushButton_DoICP_clicked()
     clouds[1]->copyXYZTo(T);
 
     qglviewer::Frame res = QGLHelper::getLocalTransformation(clouds[0]->frame, clouds[1]->frame);
+#ifdef ICP_DIALOG_CONSOLE_DEBUG
+    std::cerr<<"Local tranform is :"<<res.position()<<", "<<res.orientation()<<std::endl;
+#endif
 #if 0
     //Use Hand-manipulated data.
     result = res;
@@ -105,22 +108,30 @@ void ICPDialog::on_pushButton_DoICP_clicked()
     libicp::Matrix R = libicp::Matrix::eye(3);
     libicp::Matrix t(3, 1);
     int icp_res=-1;
+#ifdef ICP_DIALOG_CONSOLE_DEBUG
+    std::cerr<<"Initializing ICP Point To Point"<<std::endl;
+    std::cerr<<"Model size : "<<M.size()<<" Template size : "<<T.size()<<std::endl;
+    std::cerr<<"min_delta : "<<min_delta<<std::endl;
+#endif
     libicp::IcpPointToPoint icp(M.data(), M.size()/3, 3);
     icp.setMaxIterations(1);
     icp.setMinDeltaParam(min_delta);
+#ifdef ICP_DIALOG_CONSOLE_DEBUG
+    std::cerr<<"Start ICP iteration"<<std::endl;
+#endif
     try{
-    for(size_t iterations=0;iterations<max_iters;iterations++){
-        QGLHelper::qglFrameToLibicpMatrix(res, R, t);
-        icp_res = icp.fit(T.data(), T.size()/3, R, t, inlier_dist);
-        QGLHelper::libicpMatrixToqglFrame(R, t, res);
-        clouds[1]->frame = QGLHelper::concatenateTransforms(clouds[0]->frame, res);
-        drawTextInViewer(ICP_ITERATIONS,QString("ICP : %1 iterations").arg(iterations), 50,20);
-        updateViewer();
-        if(icp_res == libicp::Icp::CONVERGED){
-            break;
+        for(size_t iterations=0;iterations<max_iters;iterations++){
+            QGLHelper::qglFrameToLibicpMatrix(res, R, t);
+            icp_res = icp.fit(T.data(), T.size()/3, R, t, inlier_dist);
+            QGLHelper::libicpMatrixToqglFrame(R, t, res);
+            clouds[1]->frame = QGLHelper::concatenateTransforms(clouds[0]->frame, res);
+            drawTextInViewer(ICP_ITERATIONS,QString("ICP : %1 iterations").arg(iterations), 50,20);
+            updateViewer();
+            if(icp_res == libicp::Icp::CONVERGED){
+                break;
+            }
+            std::cerr<<iterations<<std::endl;
         }
-        std::cerr<<iterations<<std::endl;
-    }
     }catch(std::runtime_error& e){
         std::cerr<<"Error while doing ICP"<<e.what()<<std::endl;
         return;
@@ -133,7 +144,7 @@ void ICPDialog::on_pushButton_DoICP_clicked()
 
 void ICPDialog::on_pushButton_Reset_clicked()
 {
-#ifdef USE_CONSOLE_DEBUG
+#ifdef ICP_DIALOG_CONSOLE_DEBUG
     std::cerr<<"Reset ICP result"<<std::endl;
 #endif
     clouds[1]->frame = original;
@@ -142,7 +153,7 @@ void ICPDialog::on_pushButton_Reset_clicked()
 
 void ICPDialog::on_pushButton_Accept_clicked()
 {
-#ifdef USE_CONSOLE_DEBUG
+#ifdef ICP_DIALOG_CONSOLE_DEBUG
     std::cerr<<"ICP result is accepted"<<std::endl;
 #endif
     this->result = QGLHelper::getLocalTransformation(this->clouds[0]->frame, this->clouds[1]->frame);
@@ -151,7 +162,7 @@ void ICPDialog::on_pushButton_Accept_clicked()
 
 void ICPDialog::on_pushButton_Cancel_clicked()
 {
-#ifdef USE_CONSOLE_DEBUG
+#ifdef ICP_DIALOG_CONSOLE_DEBUG
     std::cerr<<"ICP result is rejected"<<std::endl;
 #endif
     this->reject();
