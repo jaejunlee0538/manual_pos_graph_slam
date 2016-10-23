@@ -9,6 +9,10 @@
 #include <QTableView>
 #include "icpdialog.h"
 #include "QGLHelper.h"
+#include <g2o/core/optimization_algorithm_factory.h>
+
+
+#define MAIN_WINDOW_CONSOLE_DEBUG
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
@@ -30,8 +34,8 @@ void MainWindow::init()
                      ui->widget_CloudViewer, SLOT(setGraphDisplayer(GraphDisplayer::Ptr)));
     QObject::connect(&graph_slam, SIGNAL(pointCloudsUpdated(QVector<PointCloudDisplayer::Ptr>)),
                      ui->widget_CloudViewer, SLOT(setPointCloudDisplayers(QVector<PointCloudDisplayer::Ptr>)));
-//    //    QObject::connect(this->ui->pushButton_ManualLoopClosing, SIGNAL(clicked()),
-//    //                     this->ui->widget_CloudViewer, SLOT(slot_manualLoopClosing()));
+    //    //    QObject::connect(this->ui->pushButton_ManualLoopClosing, SIGNAL(clicked()),
+    //    //                     this->ui->widget_CloudViewer, SLOT(slot_manualLoopClosing()));
     QObject::connect(this, SIGNAL(loopClosingAdded(int,int,PosTypes::Pose3D,g2o::EdgeSE3::InformationType)),
                      &graph_slam, SLOT(addLoopClosing(int,int,PosTypes::Pose3D,g2o::EdgeSE3::InformationType)));
     QObject::connect(this->ui->doubleSpinBox_AlphaPointCloud, SIGNAL(valueChanged(double)),
@@ -137,7 +141,8 @@ void MainWindow::on_action_File_Open_triggered()
 void MainWindow::on_pushButton_Optimize_clicked()
 {
     graph_slam.init();
-    if(!graph_slam.optimize(100)){
+    int n_iter = ui->spinBox_OptimizationIterations->value();
+    if(!graph_slam.optimize(n_iter)){
         return;
     }
     graph_slam.sendGraph();
@@ -187,7 +192,8 @@ void MainWindow::slot_graphTableDialogClosed()
                         graph_table_dialog, SLOT(setGraphTable(GraphTableData*)));
     QObject::disconnect(&graph_slam, SIGNAL(edgesSelected(QList<int>,QList<int>)),
                         graph_table_dialog, SLOT(selectEdges(QList<int>,QList<int>)));
-
+    QObject::disconnect(graph_table_dialog, SIGNAL(edgesShouldBeModified(EdgeModifications)),
+                        &graph_slam, SLOT(modifyEdges(EdgeModifications)));
     this->graph_table_dialog = NULL;
 }
 
@@ -308,8 +314,14 @@ void MainWindow::on_pushButton_ManualLoopClosing_clicked()
         logger->logMessage(QString("2 clusters are needed.(%1 generated)").arg(clusters.size()).toStdString().c_str());
         return;
     }
-    qSort(clusters[0].begin(), clusters[0].end());
-    qSort(clusters[1].begin(), clusters[1].end());
+    if(ui->checkBox_WRT_OldestVertex->isChecked())
+        qSort(clusters[0].begin(), clusters[0].end());
+    else
+        qSort(clusters[0].begin(), clusters[0].end(),[](const int& v1, const int& v2){return v1>v2;});
+    if(ui->checkBox_WRT_OldestVertex2->isChecked())
+        qSort(clusters[1].begin(), clusters[1].end());
+    else
+        qSort(clusters[1].begin(), clusters[1].end(),[](const int& v1, const int& v2){return v1>v2;});
     auto cloud_model = graph_slam.getCompositedPointCloudDisplayer(clusters[0]);
     auto cloud_template = graph_slam.getCompositedPointCloudDisplayer(clusters[1]);
 
@@ -334,13 +346,15 @@ void MainWindow::on_pushButton_ManualLoopClosing_clicked()
 
 void MainWindow::on_action2D_Project_triggered()
 {
-//TODO : let's change this to QVector<int>"
     auto tmp = ui->widget_CloudViewer->getSelections();
     if(tmp.empty()){
         return;
     }
+#ifdef MAIN_WINDOW_CONSOLE_DEBUG
+    std::cerr<<tmp.size()<<" vertices will be converted into a map"<<std::endl;
+#endif
     QVector<int> selected;
-    for(auto i:selections){
+    for(auto i:tmp){
         selected.push_back(i);
     }
     qSort(selected);
@@ -351,9 +365,78 @@ void MainWindow::on_action2D_Project_triggered()
     qglviewer::Frame origin;
     origin.setOrientation(0,0,0,1);
     origin.setPosition(clouds[0]->frame.position());
+
+    double max_x=-1000000000, max_y=-100000000, min_x=100000000000, min_y=10000000000;
     for(int i=0;i<clouds.size();i++){
         PointCloudDisplayer::Ptr cloud_ptr = clouds[i];
         TransformPointCloudDisplayer(*cloud_ptr, origin);
+        int npts = cloud_ptr->nPoints();
+        int nf = cloud_ptr->fields.size();
+        for(size_t pi=0;pi<npts;pi++){
+            size_t idx = pi * nf;
+            if(cloud_ptr->data[idx] >max_x){
+                max_x = cloud_ptr->data[idx];
+            }
+            if(cloud_ptr->data[idx] < min_x){
+                min_x = cloud_ptr->data[idx];
+            }
+            if(cloud_ptr->data[idx+1] > max_y){
+                max_y = cloud_ptr->data[idx+1];
+            }
+            if(cloud_ptr->data[idx+1] < min_y){
+                min_y = cloud_ptr->data[idx+1];
+            }
+        }
+    }
+    double res = 0.10;
+    max_x += res*5; max_y += res*5;
+    min_x -= res*5; min_y -= res*5;
+
+    size_t width = (max_x - min_x) / res;
+    size_t height = (max_y-min_y)  / res;
+    std::vector<std::vector<double>> grid_map;
+    std::vector<std::vector<size_t>> cell_count;
+#ifdef MAIN_WINDOW_CONSOLE_DEBUG
+    std::cerr<<"[minx, miny, maxx, maxy] = ["<<min_x<<", "<<min_y<<"," <<max_x<<", "<<max_y<<"]"<<std::endl;
+    std::cerr<<"Map dimension : "<<height<<" X "<<width<<std::endl;
+#endif
+
+    grid_map.resize(height);
+    cell_count.resize(height);
+    for(size_t i=0;i<height;i++){
+        grid_map[i].resize(width, 0.0);
+        cell_count[i].resize(width,0);
+    }
+    for(int i=0;i<clouds.size();i++){
+        PointCloudDisplayer::Ptr cloud_ptr = clouds[i];
+        int npts = cloud_ptr->nPoints();
+        int nf = cloud_ptr->fields.size();
+
+        for(int pi=0;pi<npts;pi++){
+            size_t idx = pi * nf;
+            size_t xi = static_cast<size_t>((cloud_ptr->data[idx] - min_x)/res);
+            size_t yi = static_cast<size_t>((cloud_ptr->data[idx+1] - min_y)/res);
+            size_t n = cell_count[yi][xi];
+            double weight = 1.0*n/(n+1);
+            grid_map[yi][xi] =grid_map[yi][xi]*weight+ cloud_ptr->data[idx+3]/(n+1);
+            cell_count[yi][xi] += 1;
+        }
     }
 
+#ifdef MAIN_WINDOW_CONSOLE_DEBUG
+    std::cerr<<"Writing file..."<<std::endl;
+#endif
+    std::ofstream file("/home/ub1404/incheon_map.pgm", std::ios_base::out|std::ios_base::binary|std::ios_base::trunc);
+    file<<"P5\n"<<width<<" "<<height<<"\n"<<255<<"\n";
+    for(size_t iy=height;iy>0;iy--){
+        for(size_t ix=0;ix<width;ix++){
+//            std::cerr<<grid_map[iy][ix]<<" ";
+            file<<static_cast<unsigned char>(grid_map[iy-1][ix]);
+        }
+//        std::cerr<<std::endl;
+    }
+    file<<std::flush;
+#ifdef MAIN_WINDOW_CONSOLE_DEBUG
+    std::cerr<<"Done!"<<std::endl;
+#endif
 }

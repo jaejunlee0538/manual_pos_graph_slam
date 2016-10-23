@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <QDir>
 #include "edgemanipulator.h"
+#include <g2o/core/robust_kernel.h>
 namespace g2o{
 class SparseOptimizer;
 }

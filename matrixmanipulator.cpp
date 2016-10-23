@@ -21,7 +21,7 @@ MatrixManipulator::~MatrixManipulator()
 
 void MatrixManipulator::setMatrix(const g2o::EdgeSE3::InformationType &matrix)
 {
-    DEBUG_FUNC_STAMP;
+//    DEBUG_FUNC_STAMP;
     //    MatrixTableModel* model = new MatrixTableModel();
     original_matrix = matrix;
     model->setMatrix(original_matrix);
@@ -33,7 +33,7 @@ bool doubleEqApprox(const double& v1, const double& v2, const double epsilon=1e-
 
 void MatrixManipulator::setMatrices(const QList<g2o::EdgeSE3::InformationType> &matrices)
 {
-    DEBUG_FUNC_STAMP;
+//    DEBUG_FUNC_STAMP;
     int rows=matrices.first().rows(), cols=matrices.first().cols();
     for(QList<g2o::EdgeSE3::InformationType>::const_iterator iter = matrices.begin()+1;iter!=matrices.end();iter++){
         if(iter->rows() != rows || iter->cols() != cols)//matrices dimension are not equal
@@ -68,6 +68,7 @@ void MatrixManipulator::on_pushButton_Apply_clicked()
     if(model->isValid()){
         g2o::EdgeSE3::InformationType m;
         model->toEigenMatrix(m);
+        std::cerr<<m<<std::endl;
         Q_EMIT matrixModified(m);
     }
 }

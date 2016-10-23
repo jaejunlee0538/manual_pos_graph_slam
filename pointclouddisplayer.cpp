@@ -112,7 +112,6 @@ size_t PointCloudDisplayer::nPoints() const{
     return data.size() / fields.size();
 }
 
-
 void TransformPointCloudDisplayer(PointCloudDisplayer &cloud, const qglviewer::Frame &reference)
 {
     int start = cloud.start;
@@ -127,5 +126,5 @@ void TransformPointCloudDisplayer(PointCloudDisplayer &cloud, const qglviewer::F
         cloud.data[idx+1] = p[1];
         cloud.data[idx+2] = p[2];
     }
-    cloud.frame.setReferenceFrame(reference.referenceFrame());
+//    cloud.frame.setReferenceFrame(reference.referenceFrame());
 }

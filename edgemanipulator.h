@@ -5,6 +5,7 @@
 #include "graphtablemodel.h"
 #include <memory>
 #include <QItemSelectionModel>
+#include <g2o/core/robust_kernel.h>
 namespace Ui {
 class EdgeManipulator;
 }
@@ -32,6 +33,19 @@ protected:
     g2o::EdgeSE3::InformationType info;
 };
 
+class EdgeModifySetRobustKernel:public EdgeModifyAction{
+public:
+    //nullptr when no robust kernel is used.
+    EdgeModifySetRobustKernel(const g2o::EdgeSE3* edge, g2o::RobustKernel* kernel)
+        :EdgeModifyAction(edge), robust_kernel(kernel)    {    }
+
+    void action(g2o::EdgeSE3 *pe){
+        pe->setRobustKernel(robust_kernel);
+    }
+protected:
+    g2o::RobustKernel * robust_kernel;
+};
+
 typedef QList<EdgeModifyAction::Ptr> EdgeModifications;
 
 class EdgeManipulator : public QWidget
@@ -55,6 +69,8 @@ private Q_SLOTS:
     //Change information matrix of selected edges.
     void slot_changeInformationMatrix(const g2o::EdgeSE3::InformationType& new_mat);
     void updateSelections(QItemSelection selected,QItemSelection deselected);
+    void on_pushButton_RobustKernel_Apply_clicked();
+
 protected:
     EdgeTableModel* edge_table;
 

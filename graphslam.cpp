@@ -15,14 +15,16 @@
 #include <g2o/core/factory.h>
 #include <map>
 #include "graphhelper.h"
-
 #define GRAPH_SLAM_DEBUG
+
+
 
 namespace __private{
 //required for loading graph from g2o file.
 //Each Vertex/Edge types must be registered in g2o::Factory(singleton) beforehand.
 g2o::RegisterTypeProxy<g2o::VertexSE3> register_vertex_se3("VERTEX_SE3:QUAT");
 g2o::RegisterTypeProxy<g2o::EdgeSE3> register_edge_se3("EDGE_SE3:QUAT");
+
 }
 GraphSLAM::GraphSLAM()
 {
@@ -352,14 +354,20 @@ bool GraphSLAM::initialized() const
 
 g2o::EdgeSE3::Measurement GraphSLAM::getMotionConstraintBetweenVertices(int vi,  int vj)
 {
+    bool inverse = false;
     if(vi > vj){
-        throw std::runtime_error("vi must be less or equal than vj");
+        inverse = true;
+        int tmp = vi;
+        vi = vj;
+        vj = tmp;
     }
     g2o::EdgeSE3::Measurement constraint;
     constraint.setIdentity();
     for(int i=vi;i<vj;i++){
         constraint = constraint *  m_motion_edges[i]->measurement();
     }
+    if(inverse)
+        return constraint.inverse();
     return constraint;
 }
 
@@ -391,7 +399,6 @@ PointCloudDisplayer::Ptr GraphSLAM::getCompositedPointCloudDisplayer(QVector<int
     for(int i=1;i<vertices.size();i++){
         msr = msr * getMotionConstraintBetweenVertices(vertices[i-1], vertices[i]);
         GraphHelper::convertEdgeSE3ToqglviewerFrame(msr, frame);
-
         for(const auto p:*(m_scan_data[vertices[i]])){
             qglviewer::Vec pv(p.x, p.y, p.z);
             pv = frame.coordinatesOfIn(pv,&origin);
@@ -407,21 +414,21 @@ void GraphSLAM::getPointCloudDisplayers(const QVector<int> &vertices, QVector<Po
 {
     cloud_out.resize(vertices.size());
     for(size_t i=0; i<vertices.size();i++){
-        cloud_out[vertices[i]].reset(new PointCloudDisplayer());
+        cloud_out[i].reset(new PointCloudDisplayer());
         GraphHelper::convertSE3ToqglviewerFrame(m_vertices[vertices[i]]->estimate(), cloud_out[i]->frame);
-        if(m_scan_data[i]){
+        if(m_scan_data[vertices[i]]){
             cloud_out[i]->fields = {"x","y","z","intensity"};
             cloud_out[i]->start = 0;
-            size_t n_pts = m_scan_data[i]->height*m_scan_data[i]->width;
+            size_t n_pts = m_scan_data[vertices[i]]->height*m_scan_data[vertices[i]]->width;
             cloud_out[i]->data.resize(4*n_pts);
             size_t n_valid = 0;
             for(size_t k=0;k<n_pts;k++){
-                if(pcl::isFinite(m_scan_data[i]->points[k])){
+                if(pcl::isFinite(m_scan_data[vertices[i]]->points[k])){
                     size_t idx = n_valid * 4;
-                    cloud_out[i]->data[idx] = m_scan_data[i]->points[k].x;
-                    cloud_out[i]->data[idx+1] = m_scan_data[i]->points[k].y;
-                    cloud_out[i]->data[idx+2] = m_scan_data[i]->points[k].z;
-                    cloud_out[i]->data[idx+3] = m_scan_data[i]->points[k].intensity;
+                    cloud_out[i]->data[idx] = m_scan_data[vertices[i]]->points[k].x;
+                    cloud_out[i]->data[idx+1] = m_scan_data[vertices[i]]->points[k].y;
+                    cloud_out[i]->data[idx+2] = m_scan_data[vertices[i]]->points[k].z;
+                    cloud_out[i]->data[idx+3] = m_scan_data[vertices[i]]->points[k].intensity;
                     n_valid++;
                 }
             }
