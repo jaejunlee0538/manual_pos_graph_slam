@@ -1,21 +1,21 @@
 <!DOCTYPE QGLVIEWER>
 <QGLViewer version="2.6.4">
   <State stereo="false">
-    <foregroundColor red="180" blue="180" green="180"/>
-    <backgroundColor red="51" blue="51" green="51"/>
+    <foregroundColor green="180" red="180" blue="180"/>
+    <backgroundColor green="51" red="51" blue="51"/>
   </State>
-  <Display gridIsDrawn="true" FPSIsDisplayed="true" cameraIsEdited="false" axisIsDrawn="false"/>
-  <Geometry height="1176" posX="0" fullScreen="false" posY="24" width="1920"/>
+  <Display FPSIsDisplayed="true" gridIsDrawn="true" cameraIsEdited="false" axisIsDrawn="false"/>
+  <Geometry height="853" width="830" posX="3033" fullScreen="false" posY="197"/>
   <Camera>
-    <Parameters fieldOfView="0.785398" zClippingCoefficient="1.73205" orthoCoef="0.414214" sceneRadius="1" Type="PERSPECTIVE" zNearCoefficient="0.005">
+    <Parameters fieldOfView="0.785398" zNearCoefficient="0.005" sceneRadius="1" orthoCoef="0.414214" zClippingCoefficient="1.73205" Type="PERSPECTIVE">
       <SceneCenter x="0" y="0" z="0"/>
     </Parameters>
-    <Stereo IODist="0.062" focusDistance="2.41421" physScreenWidth="0.5"/>
+    <Stereo focusDistance="2.41421" IODist="0.062" physScreenWidth="0.5"/>
     <ManipulatedCameraFrame>
-      <position x="10.6736" y="-5.5483" z="22.8066"/>
-      <orientation q0="0.0721687" q1="-0.112198" q2="0.0752761" q3="0.988199"/>
-      <ManipulatedParameters rotSens="1" spinSens="0.3" wheelSens="1" zoomSens="1" transSens="1"/>
-      <ManipulatedCameraParameters flySpeed="0.01" rotatesAroundUpVector="false" zoomsOnPivotPoint="false">
+      <position x="-16.832" y="14.0597" z="97.5654"/>
+      <orientation q0="-0.0689429" q1="-0.0861384" q2="-0.0207958" q3="0.993677"/>
+      <ManipulatedParameters transSens="1" zoomSens="1" rotSens="1" spinSens="0.3" wheelSens="1"/>
+      <ManipulatedCameraParameters rotatesAroundUpVector="false" flySpeed="0.01" zoomsOnPivotPoint="false">
         <sceneUpVector x="0" y="1" z="0"/>
       </ManipulatedCameraParameters>
     </ManipulatedCameraFrame>
@@ -23,6 +23,6 @@
   <ManipulatedFrame>
     <position x="0" y="0" z="0"/>
     <orientation q0="0" q1="0" q2="0" q3="1"/>
-    <ManipulatedParameters rotSens="1" spinSens="0.3" wheelSens="1" zoomSens="1" transSens="1"/>
+    <ManipulatedParameters transSens="1" zoomSens="1" rotSens="1" spinSens="0.3" wheelSens="1"/>
   </ManipulatedFrame>
 </QGLViewer>

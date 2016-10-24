@@ -8,9 +8,19 @@ MatrixManipulator::MatrixManipulator(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::MatrixManipulator), model(nullptr)
 {
+#ifdef MATRIX_MANIPULATOR_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Constructing MatrixManipulator");
+#endif
     ui->setupUi(this);
+
+#ifdef MATRIX_MANIPULATOR_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Creating MatrixTableModel");
+#endif
     model = new MatrixTableModel();
     ui->tableView_matrix->setModel(model);
+#ifdef MATRIX_MANIPULATOR_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Constructing MatrixManipulator Done.");
+#endif
 }
 
 MatrixManipulator::~MatrixManipulator()

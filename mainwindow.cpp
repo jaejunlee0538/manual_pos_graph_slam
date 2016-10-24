@@ -181,6 +181,46 @@ void MainWindow::on_action_Save_As_G2O_triggered()
     }
 }
 
+void MainWindow::on_action_Edges_Table_triggered()
+{
+    if(graph_table_dialog){
+        return;
+    }
+#ifdef MAIN_WINDOW_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Opening Edge Table Dialog");
+#endif
+
+    logger->logMessage("Opening Edge Table Dialog");
+    graph_table_dialog = new GraphTableDialog(this);
+    graph_table_dialog->setModal(false);
+
+#ifdef MAIN_WINDOW_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Setting up Signal-Slot connections");
+#endif
+
+    QObject::connect(graph_table_dialog, SIGNAL(destroyed()),
+                     this,SLOT(slot_graphTableDialogClosed()));
+    QObject::connect(graph_table_dialog, SIGNAL(edgesShouldBeRemoved(QList<const g2o::EdgeSE3*>)),
+                     &graph_slam, SLOT(removeEdges(QList<const g2o::EdgeSE3*>)));
+    QObject::connect(&graph_slam, SIGNAL(graphTableUpdated(GraphTableData*)),
+                     graph_table_dialog, SLOT(setGraphTable(GraphTableData*)));
+    QObject::connect(&graph_slam, SIGNAL(edgesSelected(QList<int>,QList<int>)),
+                     graph_table_dialog, SLOT(selectEdges(QList<int>,QList<int>)));
+    QObject::connect(graph_table_dialog, SIGNAL(edgesShouldBeModified(EdgeModifications)),
+                     &graph_slam, SLOT(modifyEdges(EdgeModifications)));
+
+#ifdef MAIN_WINDOW_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Updating graph table");
+#endif
+
+    graph_slam.slot_sendGraphTable();
+
+#ifdef MAIN_WINDOW_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Start showing graph table dialog.");
+#endif
+    graph_table_dialog->show();
+}
+
 void MainWindow::slot_graphTableDialogClosed()
 {
     logger->logMessage("Graph Edge Dialog closed");
@@ -195,29 +235,6 @@ void MainWindow::slot_graphTableDialogClosed()
     QObject::disconnect(graph_table_dialog, SIGNAL(edgesShouldBeModified(EdgeModifications)),
                         &graph_slam, SLOT(modifyEdges(EdgeModifications)));
     this->graph_table_dialog = NULL;
-}
-
-void MainWindow::on_action_Edges_Table_triggered()
-{
-    if(graph_table_dialog){
-        return;
-    }
-    logger->logMessage("Opening Edge Table Dialog");
-    graph_table_dialog = new GraphTableDialog(this);
-    graph_table_dialog->setModal(false);
-    QObject::connect(graph_table_dialog, SIGNAL(destroyed()),
-                     this,SLOT(slot_graphTableDialogClosed()));
-    QObject::connect(graph_table_dialog, SIGNAL(edgesShouldBeRemoved(QList<const g2o::EdgeSE3*>)),
-                     &graph_slam, SLOT(removeEdges(QList<const g2o::EdgeSE3*>)));
-    QObject::connect(&graph_slam, SIGNAL(graphTableUpdated(GraphTableData*)),
-                     graph_table_dialog, SLOT(setGraphTable(GraphTableData*)));
-    QObject::connect(&graph_slam, SIGNAL(edgesSelected(QList<int>,QList<int>)),
-                     graph_table_dialog, SLOT(selectEdges(QList<int>,QList<int>)));
-    QObject::connect(graph_table_dialog, SIGNAL(edgesShouldBeModified(EdgeModifications)),
-                     &graph_slam, SLOT(modifyEdges(EdgeModifications)));
-
-    graph_slam.slot_sendGraphTable();
-    graph_table_dialog->show();
 }
 
 void MainWindow::on_action_Open_From_G2O_triggered()

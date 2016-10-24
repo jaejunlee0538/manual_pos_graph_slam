@@ -50,9 +50,9 @@ public:
     void setMatrix(const GeneralMatrixType &m);
     bool setMatrices(const QVector<GeneralMatrixType> &matrices);
     bool isEmpty()const;
-    ////////////////////////////////////////
-    //Check if matrix isn't empty and every element has valid data(double)
     bool isValid()const;
+
+    /////////////////////////////////////////////////
     int rowCount(const QModelIndex &parent=QModelIndex()) const;
     int columnCount(const QModelIndex &parent=QModelIndex()) const;
     QVariant data(const QModelIndex &index, int role) const;
@@ -60,9 +60,6 @@ public:
     Qt::ItemFlags flags(const QModelIndex &index) const;
     bool setData(const QModelIndex &index, const QVariant &value, int role);
 
-    //////////////////////////////////////////////////
-protected:
-    static void copyMatrix(const GeneralMatrixType &input, QVector<RowType>& output);
 protected:
     bool isIndexInRange(const QModelIndex& index) const;
     QVector<RowType> matrix_data;

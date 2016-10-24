@@ -21,7 +21,14 @@ EdgeManipulator::EdgeManipulator(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::EdgeManipulator),edge_table(nullptr)
 {
+#ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Constructing EdgeManipulator");
+#endif
     ui->setupUi(this);
+
+#ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Initializing RobustKernel Factory");
+#endif
     std::vector<std::string> kernels;
     g2o::RobustKernelFactory::instance()->fillKnownKernels(kernels);
     ui->comboBox_RobustKernel->addItem(QString("None"));
@@ -29,6 +36,10 @@ EdgeManipulator::EdgeManipulator(QWidget *parent) :
         ui->comboBox_RobustKernel->addItem(QString(kernel.c_str()));
     }
     ui->comboBox_RobustKernel->setCurrentIndex(0);
+
+#ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Setting up signals-slots");
+#endif
     QObject::connect(ui->widget_MatrixManipulator, SIGNAL(matrixModified(GeneralMatrixType)),
                      this, SLOT(slot_changeInformationMatrix(GeneralMatrixType)));
 }
@@ -40,7 +51,7 @@ EdgeManipulator::~EdgeManipulator()
 
 void EdgeManipulator::setEdges(EdgeTableModel *new_table)
 {
-//    DEBUG_FUNC_STAMP;
+    //    DEBUG_FUNC_STAMP;
     if(new_table == nullptr){
 #ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
         std::cerr<<"new_table is nullptr["<<Q_FUNC_INFO<<"]"<<std::endl;
@@ -64,9 +75,10 @@ void EdgeManipulator::setEdges(EdgeTableModel *new_table)
 
 void EdgeManipulator::selectRows(const QList<int> &rows)
 {
+#ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO(rows.size()<<" rows are seleted");
+#endif
     ui->tableView_Edges->clearSelection();
-//    DEBUG_FUNC_STAMP;
-
     for(const auto& idx:rows){
         ui->tableView_Edges->selectRow(idx);
     }
@@ -74,7 +86,7 @@ void EdgeManipulator::selectRows(const QList<int> &rows)
 
 void EdgeManipulator::on_pushButton_Delete_clicked()
 {
-//    DEBUG_FUNC_STAMP;
+    //    DEBUG_FUNC_STAMP;
     QModelIndexList selected_row = ui->tableView_Edges->selectionModel()->selectedRows();
     if(selected_row.empty()){
 #ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
@@ -91,7 +103,7 @@ void EdgeManipulator::on_pushButton_Delete_clicked()
 
 void EdgeManipulator::slot_changeInformationMatrix(const GeneralMatrixType &new_mat)
 {
-//    DEBUG_FUNC_STAMP;
+    //    DEBUG_FUNC_STAMP;
     QModelIndexList selected_row = ui->tableView_Edges->selectionModel()->selectedRows();
     if(selected_row.empty()){
 #ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
@@ -110,7 +122,7 @@ void EdgeManipulator::slot_changeInformationMatrix(const GeneralMatrixType &new_
 
 void EdgeManipulator::updateSelections(QItemSelection selected, QItemSelection deselected)
 {
-//    DEBUG_FUNC_STAMP;
+        DEBUG_FUNC_STAMP;
     QModelIndexList selected_row = ui->tableView_Edges->selectionModel()->selectedRows();
     if(selected_row.empty()){
 #ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
@@ -124,13 +136,17 @@ void EdgeManipulator::updateSelections(QItemSelection selected, QItemSelection d
         GraphHelper::getInformationMatrix(edge_table->at(selected_row[i].row()), m);
         matrices.push_back(m);
     }
-    ui->widget_MatrixManipulator->setMatrices(matrices);
+    if(!ui->widget_MatrixManipulator->setMatrices(matrices)){
+#ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
+        DEBUG_MESSAGE_WITH_FUNC_INFO("Setting matrices failed");
+#endif
+    }
 }
 
 
 void EdgeManipulator::on_pushButton_RobustKernel_Apply_clicked()
 {
-//    DEBUG_FUNC_STAMP;
+    //    DEBUG_FUNC_STAMP;
     QModelIndexList selected_row = ui->tableView_Edges->selectionModel()->selectedRows();
     if(selected_row.empty()){
 #ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
@@ -159,7 +175,7 @@ void EdgeManipulator::on_pushButton_RobustKernel_Apply_clicked()
                                         new EdgeModifySetRobustKernel(edge_table->at(selected_row[i].row()), kernel)));
         }
 #ifdef EDGE_MANIPULATOR_CONSOLE_DEBUG
-    std::cerr<<"Kernel width : "<<kernel_width<<"["<<Q_FUNC_INFO<<"]"<<std::endl;
+        std::cerr<<"Kernel width : "<<kernel_width<<"["<<Q_FUNC_INFO<<"]"<<std::endl;
 #endif
     }
     Q_EMIT edgesShouldBeModified(modifications);

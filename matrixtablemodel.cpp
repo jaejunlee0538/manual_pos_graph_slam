@@ -1,34 +1,16 @@
 #include "matrixtablemodel.h"
-
+#define MATRIX_TABLE_MODEL_CONSOLE_DEBUG
 MatrixTableModel::MatrixTableModel(QObject *parent)
     :QAbstractTableModel(parent){
-
-}
-
-void MatrixTableModel::copyMatrix(const GeneralMatrixType &input, QVector<RowType> &output)
-{
-    int rows = input.rows(), cols = input.cols();
-    //check if output dimension is same with input dimension.
-    if(output.size() != rows || output[0].size() !=cols){
-        output.clear();
-        RowType row(input.cols());
-        for(int i=0;i<input.rows();i++){
-            output.push_back(row);
-        }
-    }
-
-    //copy data.
-    for(int irow = 0; irow<rows;irow++){
-        for(int icol=0;icol<cols;icol++){
-            output[irow][icol].setData(input(irow, icol));
-        }
-    }
+#ifdef MATRIX_TABLE_MODEL_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Construction done.");
+#endif
 }
 
 bool MatrixTableModel::getMatrix(GeneralMatrixType&output)
 {
     if(!isValid()){
-#ifdef MATRIX_MANIPULATOR_CONSOLE_DEBUG
+#ifdef MATRIX_TABLE_MODEL_CONSOLE_DEBUG
         std::cerr<<"table data is invalid.["<<Q_FUNC_INFO<<"]"<<std::endl;
 #endif
         return false;
@@ -44,7 +26,23 @@ bool MatrixTableModel::getMatrix(GeneralMatrixType&output)
 
 void MatrixTableModel::setMatrix(const GeneralMatrixType &m)
 {
-    copyMatrix(m, matrix_data);
+    int rows = m.rows(), cols = m.cols();
+    //check if output dimension is same with input dimension.
+    if(isEmpty() || matrix_data.size() != rows || matrix_data[0].size() !=cols){
+        matrix_data.clear();
+        RowType row(cols);
+        for(int i=0;i<rows;i++){
+            matrix_data.push_back(row);
+        }
+        Q_EMIT layoutChanged();
+    }
+
+    //copy data.
+    for(int irow = 0; irow<rows;irow++){
+        for(int icol=0;icol<cols;icol++){
+            matrix_data[irow][icol].setData(m(irow, icol));
+        }
+    }
 }
 
 bool doubleEqApprox(const double& v1, const double& v2, const double epsilon=1e-10){
@@ -58,7 +56,7 @@ bool MatrixTableModel::setMatrices(const QVector<GeneralMatrixType> &matrices)
     for(auto iter = matrices.begin()+1;iter!=matrices.end();iter++){
         if(iter->rows() != rows || iter->cols() != cols){
             //matrices dimension are not equal
-#ifdef MATRIX_MANIPULATOR_CONSOLE_DEBUG
+#ifdef MATRIX_TABLE_MODEL_CONSOLE_DEBUG
             std::cerr<<"matrices dimension are not equal["<<Q_FUNC_INFO<<"]"<<std::endl;
 #endif
             this->matrix_data.clear();
@@ -67,11 +65,11 @@ bool MatrixTableModel::setMatrices(const QVector<GeneralMatrixType> &matrices)
     }
 
     const GeneralMatrixType& first = matrices.first();
-    copyMatrix(first, matrix_data);
+    setMatrix(first);
     for(auto iter = matrices.begin()+1;iter!=matrices.end();iter++){
         for(int irow=0;irow<rows;irow++){
             for(int icol=0;icol<cols;icol++ ){
-                if(!doubleEqApprox(first(0,0), (*iter)(irow, icol))){
+                if(!doubleEqApprox(first(irow, icol), (*iter)(irow, icol))){
                     matrix_data[irow][icol].clear();
                 }
             }
@@ -82,7 +80,7 @@ bool MatrixTableModel::setMatrices(const QVector<GeneralMatrixType> &matrices)
 
 bool MatrixTableModel::isEmpty() const
 {
-    if(rowCount()== 0 || columnCount()== 0)
+    if(matrix_data.empty() || matrix_data[0].empty())
         return true;
     return false;
 }
@@ -107,6 +105,9 @@ int MatrixTableModel::rowCount(const QModelIndex &parent) const
 {
     if(isEmpty())
         return 1;
+    #ifdef MATRIX_TABLE_MODEL_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("rowCount : "<<matrix_data.size());
+#endif
     return matrix_data.size();
 }
 
@@ -114,13 +115,22 @@ int MatrixTableModel::columnCount(const QModelIndex &parent) const
 {
     if(isEmpty())
         return 1;
+#ifdef MATRIX_TABLE_MODEL_CONSOLE_DEBUG
+DEBUG_MESSAGE_WITH_FUNC_INFO("columnCOunt : "<<matrix_data[0].size());
+#endif
     return matrix_data.first().size();
 }
 
 QVariant MatrixTableModel::data(const QModelIndex &index, int role) const
 {
+#ifdef MATRIX_TABLE_MODEL_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("index:("<<index.row()<<","<<index.column()<<")"<<"   role: "<<role);
+#endif
     if(isEmpty()){
         if(role==Qt::DisplayRole){
+#ifdef MATRIX_TABLE_MODEL_CONSOLE_DEBUG
+            DEBUG_MESSAGE_WITH_FUNC_INFO("The matrix is empty");
+#endif
             return QVariant("Empty");
         }
     }else{
@@ -128,11 +138,17 @@ QVariant MatrixTableModel::data(const QModelIndex &index, int role) const
             return matrix_data[index.row()][index.column()].getData();
         }
     }
+#ifdef MATRIX_TABLE_MODEL_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("invalid data");
+#endif
     return QVariant();
 }
 
 QVariant MatrixTableModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
+#ifdef MATRIX_TABLE_MODEL_CONSOLE_DEBUG
+    DEBUG_MESSAGE_WITH_FUNC_INFO("section:"<<section<<"   orientation: "<<orientation<<"   role: "<<role);
+#endif
     if(role == Qt::DisplayRole){
         switch(orientation){
         case Qt::Horizontal:
@@ -174,7 +190,7 @@ bool MatrixTableModel::setData(const QModelIndex &index, const QVariant &value, 
 
 bool MatrixTableModel::isIndexInRange(const QModelIndex &index) const
 {
-    if(index.row()<0 || index.column()<0 || index.row() >= rowCount() || index.column() >= columnCount()){
+    if(isEmpty() || index.row()<0 || index.column()<0 || index.row() >= rowCount() || index.column() >= columnCount()){
         return false;
     }
     return true;
