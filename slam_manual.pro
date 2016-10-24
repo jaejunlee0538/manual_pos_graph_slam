@@ -43,7 +43,7 @@ SOURCES += main.cpp\
     edgemanipulator.cpp \
     matrixtablemodel.cpp \
     edgemodification.cpp \
-    export2dprojectiondialog.cpp
+    dialogexport2dprojection.cpp
 
 HEADERS  += mainwindow.h \
     cloudviewer.h\
@@ -67,7 +67,7 @@ HEADERS  += mainwindow.h \
     edgemanipulator.h \
     matrixtablemodel.h \
     edgemodification.h \
-    export2dprojectiondialog.h
+    dialogexport2dprojection.h
 
 unix {
 #        CONFIG -= debug debug_and_release
@@ -98,4 +98,5 @@ FORMS    += mainwindow.ui \
     icpdialog.ui \
     graphtabledialog.ui \
     matrixmanipulator.ui \
-    edgemanipulator.ui
+    edgemanipulator.ui \
+    dialogexport2dprojection.ui

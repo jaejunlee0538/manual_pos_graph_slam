@@ -10,7 +10,7 @@
 #include "icpdialog.h"
 #include "QGLHelper.h"
 #include <g2o/core/optimization_algorithm_factory.h>
-
+#include "dialogexport2dprojection.h"
 
 #define MAIN_WINDOW_CONSOLE_DEBUG
 MainWindow::MainWindow(QWidget *parent) :
@@ -358,14 +358,34 @@ void MainWindow::on_pushButton_ManualLoopClosing_clicked()
                 QGLHelper::toPosTypesPose2D(icp_result), info);
 #ifdef MAIN_WINDOW_CONSOLE_DEBUG
         auto pos2d = QGLHelper::toPosTypesPose2D(icp_result);
-    DEBUG_MESSAGE_WITH_FUNC_INFO(oss.str());
-    DEBUG_MESSAGE_WITH_FUNC_INFO("Edge : "<<pos2d.xy.x<<"\t"<<pos2d.xy.y<<"\t"<<pos2d.heading);
+        DEBUG_MESSAGE_WITH_FUNC_INFO(oss.str());
+        DEBUG_MESSAGE_WITH_FUNC_INFO("Edge : "<<pos2d.xy.x<<"\t"<<pos2d.xy.y<<"\t"<<pos2d.heading);
 #endif
     }
 }
 
 void MainWindow::on_action2D_Project_triggered()
 {
+    DialogExport2DProjection * dialog = new DialogExport2DProjection();
+    dialog->setModal(true);
+    if(!dialog->exec()){
+        return;
+    }
+
+    bool use_height_cut = dialog->isHeightCutEnabled();
+    double min_height ,max_height;
+    if(use_height_cut){
+        min_height = dialog->minHeight();
+        max_height = dialog->maxHeight();
+    }
+
+    bool use_intensity_cut = dialog->isIntensityCutEnalbed();
+    double min_intensity, max_intensity;
+    if(use_intensity_cut){
+        min_intensity = dialog->minIntensity();
+        max_intensity = dialog->maxIntensity();
+    }
+
     auto tmp = ui->widget_CloudViewer->getSelections();
     if(tmp.empty()){
         return;
@@ -434,6 +454,12 @@ void MainWindow::on_action2D_Project_triggered()
 
         for(int pi=0;pi<npts;pi++){
             size_t idx = pi * nf;
+            if(use_height_cut && cloud_ptr->data[idx+2] > max_height || cloud_ptr->data[idx+2] < min_height){
+                continue;
+            }
+            if(use_intensity_cut && cloud_ptr->data[idx+3] > max_intensity || cloud_ptr->data[idx+3] < min_intensity){
+                continue;
+            }
             size_t xi = static_cast<size_t>((cloud_ptr->data[idx] - min_x)/res);
             size_t yi = static_cast<size_t>((cloud_ptr->data[idx+1] - min_y)/res);
             size_t n = cell_count[yi][xi];
@@ -451,10 +477,10 @@ void MainWindow::on_action2D_Project_triggered()
     file<<"P5\n"<<width<<" "<<height<<"\n"<<255<<"\n";
     for(size_t iy=height;iy>0;iy--){
         for(size_t ix=0;ix<width;ix++){
-//            std::cerr<<grid_map[iy][ix]<<" ";
+            //            std::cerr<<grid_map[iy][ix]<<" ";
             file<<static_cast<unsigned char>(grid_map[iy-1][ix]);
         }
-//        std::cerr<<std::endl;
+        //        std::cerr<<std::endl;
     }
     file<<std::flush;
 #ifdef MAIN_WINDOW_CONSOLE_DEBUG
