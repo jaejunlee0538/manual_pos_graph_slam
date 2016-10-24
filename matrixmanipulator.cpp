@@ -2,7 +2,7 @@
 #include "ui_matrixmanipulator.h"
 #include "Logger.h"
 
-#define MATRIX_MANIPULATOR_CONSOLE_DEBUG
+//#define MATRIX_MANIPULATOR_CONSOLE_DEBUG
 
 MatrixManipulator::MatrixManipulator(QWidget *parent) :
     QWidget(parent),

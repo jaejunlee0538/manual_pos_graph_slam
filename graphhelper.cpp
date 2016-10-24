@@ -12,7 +12,6 @@ g2o::VertexSE3 *createVertexSE3(const int &id, const PosTypes::Pose3D &p){
 
 
 g2o::VertexSE3 *createVertexSE3(const int &id, const g2o::VertexSE3 *v_prev, const PosTypes::Pose3D &delta){
-    typedef g2o::VertexSE3::EstimateType SE3;
     g2o::VertexSE3 *v = new g2o::VertexSE3();
     v->setEstimate(v_prev->estimate());
     double data[7];
@@ -45,6 +44,17 @@ g2o::EdgeSE3 *createEdgeSE3(const int& id, g2o::VertexSE3 *vi, g2o::VertexSE3 *v
     e->setInformation(info_mat);
     return e;
 }
+g2o::EdgeSE2 *createEdgeSE2(const int& id, g2o::VertexSE2* vi, g2o::VertexSE2* vj,
+                            const PosTypes::Pose2D& delta,
+                            const g2o::EdgeSE2::InformationType& info_mat){
+    g2o::EdgeSE2 * e=new g2o::EdgeSE2();
+    e->setId(id);
+    e->setVertex(0, vi);
+    e->setVertex(1, vj);
+    e->setMeasurement(g2o::EdgeSE2::Measurement(delta.xy.x, delta.xy.y, delta.heading));
+    e->setInformation(info_mat);
+    return e;
+}
 
 void convertSE3ToqglviewerFrame(const g2o::VertexSE3::EstimateType &in, qglviewer::Frame &out)
 {
@@ -52,6 +62,13 @@ void convertSE3ToqglviewerFrame(const g2o::VertexSE3::EstimateType &in, qglviewe
     convertSE3To4x4Matrix(in, m);
     out.setFromMatrix(m);
 }
+
+void convertSE2ToqglviewerFrame(const g2o::VertexSE2::EstimateType &in, qglviewer::Frame &out){
+    static GLdouble m[16];
+    convertSE2To4x4Matrix(in, m);
+    out.setFromMatrix(m);
+}
+
 
 void setInformationMatrixDiagonal(g2o::EdgeSE3::InformationType& info, const double& v){
     info.setZero();
@@ -67,6 +84,12 @@ void convertEdgeSE3ToqglviewerFrame(const g2o::EdgeSE3::Measurement &in, qglview
     out.setFromMatrix(m);
 }
 
+void convertEdgeSE2ToqglviewerFrame(const g2o::EdgeSE2::Measurement &in, qglviewer::Frame &out){
+    static GLdouble m[16];
+    convertEdgeSE2To4X4Matrix(in, m);
+    out.setFromMatrix(m);
+}
+
 void getInformationMatrix(const g2o::OptimizableGraph::Edge *e, GeneralMatrixType &m)
 {
     int dim = e->dimension();
@@ -79,6 +102,11 @@ void getInformationMatrix(const g2o::OptimizableGraph::Edge *e, GeneralMatrixTyp
             m(j,i) = data[i*dim+j];
         }
     }
+}
+
+g2o::VertexSE2::EstimateType getDifference(const g2o::VertexSE2::EstimateType &from, const g2o::VertexSE2::EstimateType &to)
+{
+    return from.inverse() * to;
 }
 
 }

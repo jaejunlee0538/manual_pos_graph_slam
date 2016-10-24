@@ -42,7 +42,8 @@ SOURCES += main.cpp\
     matrixmanipulator.cpp \
     edgemanipulator.cpp \
     matrixtablemodel.cpp \
-    edgemodification.cpp
+    edgemodification.cpp \
+    export2dprojectiondialog.cpp
 
 HEADERS  += mainwindow.h \
     cloudviewer.h\
@@ -65,7 +66,8 @@ HEADERS  += mainwindow.h \
     matrixmanipulator.h \
     edgemanipulator.h \
     matrixtablemodel.h \
-    edgemodification.h
+    edgemodification.h \
+    export2dprojectiondialog.h
 
 unix {
 #        CONFIG -= debug debug_and_release

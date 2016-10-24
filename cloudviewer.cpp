@@ -109,6 +109,7 @@ void CloudViewer::draw(){
         graph->drawMotionEdges();
     }
     if(!clouds.empty()){
+        std::cerr<<clouds[0]->frame.position()<<"\t"<<clouds[0]->frame.orientation()<<std::endl;
         for(size_t i=0;i<clouds.size();i++){
             bool selected = selections.contains(i);
             if(clouds_visible_all && clouds_visible[i]){

@@ -68,13 +68,13 @@ void ICPDialog::initialize()
 {
     //express 'input' cloud w.r.t 'model' frame.
     //note that 'model' frame is the origin in ICPDialog.
-    clouds[1]->frame.setPosition(clouds[1]->frame.position() - clouds[0]->frame.position());
+    clouds[1]->frame = QGLHelper::getLocalTransformation(clouds[0]->frame, clouds[1]->frame);
     clouds[0]->frame.setPosition(0,0,0);
+    clouds[0]->frame.setOrientation(0,0,0,1);
     original = clouds[1]->frame;
     ui->widget_cloudViewer->setPointCloudDisplayers({clouds[0], clouds[1]});
     ui->widget_cloudViewer->slot_setPointSize(1.0);
     ui->widget_cloudViewer->slot_setPointAlpha(0.8);
-
 }
 
 qglviewer::Frame ICPDialog::getICPResult()

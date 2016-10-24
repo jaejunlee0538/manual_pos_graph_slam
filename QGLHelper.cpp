@@ -4,7 +4,7 @@
 using namespace qglviewer;
 
 namespace QGLHelper {
-qglviewer::Frame getLocalTransformation(const qglviewer::Frame& from, const qglviewer::Frame& to){
+qglviewer::Frame getLocalTransformation(qglviewer::Frame from, qglviewer::Frame to){
     Frame ret = from.inverse();
     Quaternion q = ret.rotation();
     ret.rotate(to.rotation());
@@ -18,6 +18,16 @@ PosTypes::Pose3D toPosTypesPose3D(const Frame &frame)
     Quaternion q = frame.orientation();
     return PosTypes::Pose3D(v[0], v[1], v[2], q[0], q[1], q[2], q[3]);
 }
+
+PosTypes::Pose2D toPosTypesPose2D(const Frame &frame)
+{
+    Vec v = frame.position();
+    Quaternion q = frame.orientation();//Assuming the only rotation is in z axis
+    double t0 = 2*(q[2]*q[3]);
+    double t1 = q[3]*q[3]-q[2]*q[2];
+    return PosTypes::Pose2D(v[0], v[1], atan2(t0, t1));
+}
+
 
 Frame concatenateTransforms(const Frame &T1, const Frame &T2)
 {

@@ -19,6 +19,12 @@ struct t_XY{
 };
 
 struct Pose2D{
+    Pose2D(const double& x, const double& y, const double& heading){
+        xy.x = x;
+        xy.y = y;
+        this->heading = heading;
+    }
+
     double heading;
     t_XY xy;
 };

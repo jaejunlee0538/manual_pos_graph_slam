@@ -1,5 +1,5 @@
 #include "matrixtablemodel.h"
-#define MATRIX_TABLE_MODEL_CONSOLE_DEBUG
+//#define MATRIX_TABLE_MODEL_CONSOLE_DEBUG
 MatrixTableModel::MatrixTableModel(QObject *parent)
     :QAbstractTableModel(parent){
 #ifdef MATRIX_TABLE_MODEL_CONSOLE_DEBUG

@@ -9,14 +9,14 @@ class VertexTableModel : public QAbstractTableModel
 {
 public:
     VertexTableModel();
-    void pushBack(const g2o::VertexSE3* vertex);
-    const g2o::VertexSE3 *at(int irow) const;
+    void pushBack(const g2o::OptimizableGraph::Vertex* vertex);
+    const g2o::OptimizableGraph::Vertex *at(int irow) const;
     int rowCount(const QModelIndex &parent= QModelIndex()) const;
     int columnCount(const QModelIndex &parent= QModelIndex()) const;
     QVariant data(const QModelIndex &index, int role) const;
     QVariant headerData(int section, Qt::Orientation orientation, int role) const;
 protected:
-    QVector<const g2o::VertexSE3*> vertices_se3;
+    QVector<const g2o::OptimizableGraph::Vertex*> vertices;
 };
 class EdgeTableModel : public QAbstractTableModel
 {

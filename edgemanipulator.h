@@ -19,9 +19,9 @@ class EdgeManipulator : public QWidget
 public:
     explicit EdgeManipulator(QWidget *parent = 0);
     ~EdgeManipulator();
-
+    void enableEdgeDeletion(bool enable);
 Q_SIGNALS:
-    void edgesShouldBeRemoved(const QList<const g2o::OptimizableGraph::Edge*>& edges);
+    void edgesShouldBeRemoved(const QVector<int>& edges);
     void edgesShouldBeModified(const EdgeModifications& modifications);
 
 public Q_SLOTS:

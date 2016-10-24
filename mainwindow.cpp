@@ -34,10 +34,6 @@ void MainWindow::init()
                      ui->widget_CloudViewer, SLOT(setGraphDisplayer(GraphDisplayer::Ptr)));
     QObject::connect(&graph_slam, SIGNAL(pointCloudsUpdated(QVector<PointCloudDisplayer::Ptr>)),
                      ui->widget_CloudViewer, SLOT(setPointCloudDisplayers(QVector<PointCloudDisplayer::Ptr>)));
-    //    //    QObject::connect(this->ui->pushButton_ManualLoopClosing, SIGNAL(clicked()),
-    //    //                     this->ui->widget_CloudViewer, SLOT(slot_manualLoopClosing()));
-    QObject::connect(this, SIGNAL(loopClosingAdded(int,int,PosTypes::Pose3D,g2o::EdgeSE3::InformationType)),
-                     &graph_slam, SLOT(addLoopClosing(int,int,PosTypes::Pose3D,g2o::EdgeSE3::InformationType)));
     QObject::connect(this->ui->doubleSpinBox_AlphaPointCloud, SIGNAL(valueChanged(double)),
                      this->ui->widget_CloudViewer, SLOT(slot_setPointAlpha(double)));
     QObject::connect(this->ui->doubleSpinBox_PointSize, SIGNAL(valueChanged(double)),
@@ -200,8 +196,8 @@ void MainWindow::on_action_Edges_Table_triggered()
 
     QObject::connect(graph_table_dialog, SIGNAL(destroyed()),
                      this,SLOT(slot_graphTableDialogClosed()));
-    QObject::connect(graph_table_dialog, SIGNAL(edgesShouldBeRemoved(QList<const g2o::EdgeSE3*>)),
-                     &graph_slam, SLOT(removeEdges(QList<const g2o::EdgeSE3*>)));
+    QObject::connect(graph_table_dialog, SIGNAL(loopEdgesShouldBeRemoved(QVector<int>)),
+                     &graph_slam, SLOT(removeLoopEdges(QVector<int>)));
     QObject::connect(&graph_slam, SIGNAL(graphTableUpdated(GraphTableData*)),
                      graph_table_dialog, SLOT(setGraphTable(GraphTableData*)));
     QObject::connect(&graph_slam, SIGNAL(edgesSelected(QList<int>,QList<int>)),
@@ -226,8 +222,8 @@ void MainWindow::slot_graphTableDialogClosed()
     logger->logMessage("Graph Edge Dialog closed");
     QObject::disconnect(graph_table_dialog, SIGNAL(destroyed()),
                         this,SLOT(slot_graphTableDialogClosed()));
-    QObject::disconnect(graph_table_dialog, SIGNAL(edgesShouldBeRemoved(QList<const g2o::EdgeSE3*>)),
-                        &graph_slam, SLOT(removeEdges(QList<const g2o::EdgeSE3*>)));
+    QObject::disconnect(graph_table_dialog, SIGNAL(edgesShouldBeRemoved(QList<const g2o::OptimizableGraph::Edge*>)),
+                        &graph_slam, SLOT(removeEdges(QList<const g2o::OptimizableGraph::Edge*>)));
     QObject::disconnect(&graph_slam, SIGNAL(graphTableUpdated(GraphTableData*)),
                         graph_table_dialog, SLOT(setGraphTable(GraphTableData*)));
     QObject::disconnect(&graph_slam, SIGNAL(edgesSelected(QList<int>,QList<int>)),
@@ -325,6 +321,7 @@ void MainWindow::on_pushButton_ManualLoopClosing_clicked()
         logger->logMessage("Please, choose at least 2 vertices.");
         return;
     }
+    bool using_motion_edges = ui->checkBox_AccumWithMotionEdges->isChecked();
     QVector<QVector<int>> clusters;
     generateClusters(selections, clusters);
     if(clusters.size() != 2){
@@ -339,8 +336,8 @@ void MainWindow::on_pushButton_ManualLoopClosing_clicked()
         qSort(clusters[1].begin(), clusters[1].end());
     else
         qSort(clusters[1].begin(), clusters[1].end(),[](const int& v1, const int& v2){return v1>v2;});
-    auto cloud_model = graph_slam.getCompositedPointCloudDisplayer(clusters[0]);
-    auto cloud_template = graph_slam.getCompositedPointCloudDisplayer(clusters[1]);
+    auto cloud_model = graph_slam.getCompositedPointCloudDisplayer(clusters[0],using_motion_edges);
+    auto cloud_template = graph_slam.getCompositedPointCloudDisplayer(clusters[1],using_motion_edges);
 
     ICPDialog icp_dialog;
     icp_dialog.setModelCloud(cloud_model);
@@ -354,10 +351,16 @@ void MainWindow::on_pushButton_ManualLoopClosing_clicked()
         oss<<"\tPosition : "<<icp_result.position()<<std::endl;
         oss<<"\tOrientation : "<<icp_result.orientation()<<std::endl;
         logger->logMessage(oss.str().c_str());
-        g2o::EdgeSE3::InformationType info;
+
+        GraphSLAM::EdgeType::InformationType info;
         info.setIdentity();
         graph_slam.addLoopClosing(clusters[0][0], clusters[1][0],
-                QGLHelper::toPosTypesPose3D(icp_result), info);
+                QGLHelper::toPosTypesPose2D(icp_result), info);
+#ifdef MAIN_WINDOW_CONSOLE_DEBUG
+        auto pos2d = QGLHelper::toPosTypesPose2D(icp_result);
+    DEBUG_MESSAGE_WITH_FUNC_INFO(oss.str());
+    DEBUG_MESSAGE_WITH_FUNC_INFO("Edge : "<<pos2d.xy.x<<"\t"<<pos2d.xy.y<<"\t"<<pos2d.heading);
+#endif
     }
 }
 
@@ -457,4 +460,14 @@ void MainWindow::on_action2D_Project_triggered()
 #ifdef MAIN_WINDOW_CONSOLE_DEBUG
     std::cerr<<"Done!"<<std::endl;
 #endif
+}
+
+void MainWindow::on_pushButton_DeleteLastLoopClosing_clicked()
+{
+    auto reply= QMessageBox::question(this, "Delete Last Loop Closing",
+                                      "Do you want to remove the last loop closing?",
+                                      QMessageBox::Yes|QMessageBox::No);
+    if(reply == QMessageBox::Yes){
+        graph_slam.removeLastLoopEdge();
+    }
 }

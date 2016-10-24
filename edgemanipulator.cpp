@@ -4,7 +4,7 @@
 #include <g2o/core/robust_kernel_factory.h>
 #include <g2o/core/robust_kernel_impl.h>
 #include "graphhelper.h"
-#define EDGE_MANIPULATOR_CONSOLE_DEBUG
+//#define EDGE_MANIPULATOR_CONSOLE_DEBUG
 namespace g2o{
 static g2o::RegisterRobustKernelProxy<RobustKernelHuber> robust_kernel_register_Huber("Huber");
 //G2O_REGISTER_ROBUST_KERNEL(Huber, RobustKernelHuber)
@@ -47,6 +47,11 @@ EdgeManipulator::EdgeManipulator(QWidget *parent) :
 EdgeManipulator::~EdgeManipulator()
 {
     delete ui;
+}
+
+void EdgeManipulator::enableEdgeDeletion(bool enable)
+{
+    ui->pushButton_Delete->setEnabled(enable);
 }
 
 void EdgeManipulator::setEdges(EdgeTableModel *new_table)
@@ -94,9 +99,9 @@ void EdgeManipulator::on_pushButton_Delete_clicked()
 #endif
         return;
     }
-    QList<const g2o::OptimizableGraph::Edge*> edges_to_remove;
+    QVector<int> edges_to_remove;
     for(size_t i=0;i<selected_row.size();i++){
-        edges_to_remove.push_back(edge_table->at(selected_row[i].row()));
+        edges_to_remove.push_back(selected_row[i].row());
     }
     Q_EMIT edgesShouldBeRemoved(edges_to_remove);
 }

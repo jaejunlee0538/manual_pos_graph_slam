@@ -5,11 +5,11 @@
 #include <libicp/matrix.h>
 namespace QGLHelper{
 
-qglviewer::Frame getLocalTransformation(const qglviewer::Frame& from,const qglviewer::Frame& to);
+qglviewer::Frame getLocalTransformation(qglviewer::Frame from,qglviewer::Frame to);
 qglviewer::Frame concatenateTransforms(const qglviewer::Frame& T1,const qglviewer::Frame& T2);
 
 PosTypes::Pose3D toPosTypesPose3D(const qglviewer::Frame& frame);
-
+PosTypes::Pose2D toPosTypesPose2D(const qglviewer::Frame &frame);
 
 qglviewer::Frame concatenateTransforms(const qglviewer::Frame &T1, const qglviewer::Frame &T2);
 void qglFrameToLibicpMatrix(const qglviewer::Frame& frame, libicp::Matrix& R, libicp::Matrix& t);

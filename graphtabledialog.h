@@ -18,7 +18,9 @@ public:
 
 Q_SIGNALS:
     void edgesShouldBeModified(const EdgeModifications& modifications);
-    void edgesShouldBeRemoved(const QList<const g2o::EdgeSE3*>& edges_to_remove);
+    void loopEdgesShouldBeRemoved(const QVector<int>& edges_to_remove);
+    void motionEdgesShouldBeRemoved(const QVector<int>& edges_to_remove);
+
 public Q_SLOTS:
     void setGraphTable(GraphTableData* graph_table);
     void selectVertices(const QList<int>& vertices);
@@ -26,7 +28,8 @@ public Q_SLOTS:
 
 private Q_SLOTS:
     void slot_ModifyEdges(const EdgeModifications& modifications);
-    void slot_RemoveEdges(const QList<const g2o::EdgeSE3*>& edges_to_remove);
+    void slot_RemoveLoopEdges(const QVector<int>& edges_to_remove);
+//    void slot_RemoveMotionEdges(const QVector<int>& edges_to_remove);
 
 private:
     Ui::GraphTableDialog *ui;

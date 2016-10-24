@@ -127,6 +127,9 @@
         <layout class="QGridLayout" name="gridLayout">
          <item row="0" column="2">
           <widget class="QPushButton" name="pushButton_DoICP">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="text">
             <string>Do ICP</string>
            </property>

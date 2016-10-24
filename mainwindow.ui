@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>830</width>
-    <height>853</height>
+    <width>871</width>
+    <height>1016</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -119,6 +119,13 @@
                </widget>
               </item>
               <item>
+               <widget class="QPushButton" name="pushButton_DeleteLastLoopClosing">
+                <property name="text">
+                 <string>Delte Last Loop Closing</string>
+                </property>
+               </widget>
+              </item>
+              <item>
                <widget class="QPushButton" name="pushButton_ManualLoopClosing">
                 <property name="text">
                  <string>Manual Loop Closing</string>
@@ -136,6 +143,13 @@
                <widget class="QCheckBox" name="checkBox_WRT_OldestVertex2">
                 <property name="text">
                  <string>W.R.T Oldest Vertex</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QCheckBox" name="checkBox_AccumWithMotionEdges">
+                <property name="text">
+                 <string>Accum with motion edges</string>
                 </property>
                </widget>
               </item>
@@ -281,7 +295,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>830</width>
+     <width>871</width>
      <height>25</height>
     </rect>
    </property>

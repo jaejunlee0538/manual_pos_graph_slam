@@ -111,12 +111,12 @@ bool EdgeTableModel::setData(const QModelIndex &index, const QVariant &value, in
 }
 
 
-void VertexTableModel::pushBack(const g2o::VertexSE3 *vertex)
+void VertexTableModel::pushBack(const g2o::OptimizableGraph::Vertex *vertex)
 {
-    vertices_se3.push_back(vertex);
+    vertices.push_back(vertex);
 }
 
-const g2o::VertexSE3 *VertexTableModel::at(int irow) const
+const g2o::OptimizableGraph::Vertex *VertexTableModel::at(int irow) const
 {
-    return vertices_se3[irow];
+    return vertices[irow];
 }

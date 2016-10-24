@@ -33,18 +33,18 @@ typedef ManipulatedFrameSetConstraint<qglviewer::WorldConstraint> WorldManipulat
 ///////////////////////Template implemenation//////////////////////////////////
 template <class ConstraintType>
 void ManipulatedFrameSetConstraint<ConstraintType>::constrainTranslation(qglviewer::Vec &tr, qglviewer::Frame * const frame){
-    std::cerr<<"constrainTranslation(raw) : "<<tr<<std::endl;
+//    std::cerr<<"constrainTranslation(raw) : "<<tr<<std::endl;
     ConstraintType::constrainTranslation(tr, frame);
-    std::cerr<<"constrainTranslation(constrained) : "<<tr<<std::endl;
+//    std::cerr<<"constrainTranslation(constrained) : "<<tr<<std::endl;
     for(FrameContainer::iterator it=frames.begin();it!=frames.end();it++){
         (*it)->translate(tr);
     }
 }
 template <class ConstraintType>
 void ManipulatedFrameSetConstraint<ConstraintType>::constrainRotation(qglviewer::Quaternion &quat, qglviewer::Frame * const frame){
-    std::cerr<<"constrainRotation(raw) : "<<quat<<std::endl;
+//    std::cerr<<"constrainRotation(raw) : "<<quat<<std::endl;
     ConstraintType::constrainRotation(quat, frame);
-    std::cerr<<"constrainRotation(constrained) : "<<quat<<std::endl;
+//    std::cerr<<"constrainRotation(constrained) : "<<quat<<std::endl;
     const qglviewer::Vec world = frame->inverseTransformOf(quat.axis());
     const qglviewer::Vec pos = frame->position();
     const float angle = quat.angle();

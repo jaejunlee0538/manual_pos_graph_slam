@@ -5,7 +5,7 @@
 #include "postypes.h"
 #include "pointclouddisplayer.h"
 #include "graphdisplayer.h"
-#include <g2o/types/slam3d/types_slam3d.h>
+#include <g2o/types/slam2d/types_slam2d.h>
 #include <memory>
 #include <map>
 #include <pcl/point_types.h>
@@ -28,8 +28,8 @@ public:
     typedef const std::shared_ptr<GraphSLAM> ConstPtr;
     typedef pcl::PointCloud<pcl::PointXYZI> ScanDataType;
 
-    typedef g2o::VertexSE3 VertexType;
-    typedef g2o::EdgeSE3 EdgeType;
+    typedef g2o::VertexSE2 VertexType;
+    typedef g2o::EdgeSE2 EdgeType;
     typedef EdgeType::InformationType InformationType;
 public:
     GraphSLAM();
@@ -46,8 +46,9 @@ public:
     void sendGraph();
     void sendPointCloud();
     bool initialized()const;
-    PointCloudDisplayer::Ptr getCompositedPointCloudDisplayer(QVector<int> vertices);
+    PointCloudDisplayer::Ptr getCompositedPointCloudDisplayer(QVector<int> vertices, bool using_edges);
     void getPointCloudDisplayers(const QVector<int>& vertices, QVector<PointCloudDisplayer::Ptr>& cloud_out);
+    void removeLastLoopEdge();
 public Q_SLOTS:
     void reset();
     void resetLoopClosings();
@@ -60,12 +61,11 @@ public Q_SLOTS:
     bool addVertex(const PosTypes::Pose3D& p, ScanDataType::Ptr cloud_ptr, const bool& incremental=true);
 
     //Adding Edge
-    bool addEdgeFromVertices(const int& vi, const int& vj, const g2o::EdgeSE3::InformationType& info_mat);
-    bool addLoopClosing(const int& vi, const int& vj, const PosTypes::Pose3D& data ,const g2o::EdgeSE3::InformationType& info_mat);
+    bool addEdgeFromVertices(const int& vi, const int& vj, const EdgeType::InformationType& info_mat);
+    bool addLoopClosing(const int& vi, const int& vj, const PosTypes::Pose2D& data ,const EdgeType::InformationType& info_mat);
 
     //Removing edge
-    void removeEdge(const g2o::EdgeSE3* e);
-    void removeEdges(QList<const g2o::EdgeSE3*> es);
+    void removeLoopEdges(const QVector<int>& indices);
     void modifyEdges(const EdgeModifications& modifications);
 Q_SIGNALS:
     void graphDisplayUpdated(GraphDisplayer::Ptr graph);
@@ -83,13 +83,13 @@ public Q_SLOTS:
 protected:
     void loadPCDFiles();
     void initG2OGraph();
-    g2o::EdgeSE3::Measurement getMotionConstraintBetweenVertices(int vi, int vj);
+    EdgeType::Measurement getMotionConstraintBetweenVertices(int vi, int vj);
 protected:
     std::shared_ptr<g2o::SparseOptimizer> m_g2o_graph;
-    QVector<g2o::VertexSE3*> m_vertices;
+    QVector<VertexType*> m_vertices;
     QVector<ScanDataType::Ptr> m_scan_data;//indices must conincide with the indices of m_vertices.
-    QVector<g2o::EdgeSE3*> m_motion_edges;
-    QList<g2o::EdgeSE3*> m_loop_edges;
+    QVector<EdgeType*> m_motion_edges;
+    QList<EdgeType*> m_loop_edges;
     friend class MainWindow;
 };
 

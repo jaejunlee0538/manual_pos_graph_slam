@@ -23,8 +23,8 @@
 namespace __private{
 //required for loading graph from g2o file.
 //Each Vertex/Edge types must be registered in g2o::Factory(singleton) beforehand.
-g2o::RegisterTypeProxy<g2o::VertexSE3> register_vertex_se3("VERTEX_SE3:QUAT");
-g2o::RegisterTypeProxy<g2o::EdgeSE3> register_edge_se3("EDGE_SE3:QUAT");
+//g2o::RegisterTypeProxy<g2o::VertexSE3> register_vertex_se3("VERTEX_SE3:QUAT");
+//g2o::RegisterTypeProxy<g2o::EdgeSE3> register_edge_se3("EDGE_SE3:QUAT");
 g2o::RegisterTypeProxy<g2o::VertexSE2> register_vertex_se2("VERTEX_SE2");
 g2o::RegisterTypeProxy<g2o::EdgeSE2> register_edge_se2("EDGE_SE2");
 }
@@ -95,11 +95,11 @@ void GraphSLAM::loadFromG2ODB(const QDir &db_dir)
     //WARN : assuming that vertex id starts from '0' and ends at 'vertices().size()-1'.
     size_t n_vertex = m_g2o_graph->vertices().size();
     for(size_t id=0;id<n_vertex;id++){
-        g2o::VertexSE3* v_se3 = dynamic_cast<g2o::VertexSE3*>(m_g2o_graph->vertex(id));
-        if(v_se3 == NULL){
-            throw std::runtime_error("dynamic_cast<g2o::VertexSE3*> failed");
+        VertexType* v_se2 = dynamic_cast<VertexType*>(m_g2o_graph->vertex(id));
+        if(v_se2 == NULL){
+            throw std::runtime_error("dynamic_cast<VertexType*> failed");
         }
-        m_vertices.push_back(v_se3);
+        m_vertices.push_back(v_se2);
     }
 #ifdef GRAPH_SLAM_DEBUG
     std::cerr<<"Copying edges"<<std::endl;
@@ -108,20 +108,20 @@ void GraphSLAM::loadFromG2ODB(const QDir &db_dir)
     //the number of motion edges is determined by the number of vertices.
     m_motion_edges.resize(m_vertices.size()-1);
     for(const auto& ev:m_g2o_graph->edges()){
-        g2o::EdgeSE3* e_se3 = dynamic_cast<g2o::EdgeSE3*>(ev);
-        if(e_se3 == NULL){
-            throw std::runtime_error(" dynamic_cast<g2o::EdgeSE3*> failed.");
+        EdgeType* e_se2 = dynamic_cast<EdgeType*>(ev);
+        if(e_se2 == NULL){
+            throw std::runtime_error(" dynamic_cast<EdgeType*> failed.");
         }
 
-        if(abs(e_se3->vertex(1)->id() - e_se3->vertex(0)->id()) > 1){
-            m_loop_edges.push_back(e_se3);
+        if(abs(e_se2->vertex(1)->id() - e_se2->vertex(0)->id()) > 1){
+            m_loop_edges.push_back(e_se2);
         }else{
-            int v_id = e_se3->vertex(0)->id();
+            int v_id = e_se2->vertex(0)->id();
             if(v_id >= m_motion_edges.size()){
                 throw std::runtime_error("Invliad motion edge.");
             }
-            m_motion_edges[v_id] = e_se3;
-            //            m_motion_edges.push_back(e_se3);
+            m_motion_edges[v_id] = e_se2;
+            //            m_motion_edges.push_back(e_se2);
         }
     }
 
@@ -178,45 +178,50 @@ bool GraphSLAM::setVertexFixed(const int &id, const bool &fixed)
 
 bool GraphSLAM::addVertex(const PosTypes::Pose3D &p, ScanDataType::Ptr cloud_ptr, const bool &incremental)
 {
-    VertexType * v;
-    int sz_vertices = m_vertices.size();
-    if(incremental && sz_vertices > 0){
-        v = GraphHelper::createVertexSE3(sz_vertices, m_vertices[sz_vertices-1], p);
-    }else{
-        v = GraphHelper::createVertexSE3(sz_vertices, p);
-    }
+    DEBUG_MUST_NOT_RUN;
+    return false;
+    //    VertexType * v;
+    //    int sz_vertices = m_vertices.size();
+    //    if(incremental && sz_vertices > 0){
+    //        v = GraphHelper::createVertexSE3(sz_vertices, m_vertices[sz_vertices-1], p);
+    //    }else{
+    //        v = GraphHelper::createVertexSE3(sz_vertices, p);
+    //    }
 
-    m_g2o_graph->addVertex(v);
-    m_vertices.push_back(v);
-    m_scan_data.push_back(cloud_ptr);
-    return true;
+    //    m_g2o_graph->addVertex(v);
+    //    m_vertices.push_back(v);
+    //    m_scan_data.push_back(cloud_ptr);
+    //    return true;
 }
 
 bool GraphSLAM::addEdgeFromVertices(const int &vi, const int &vj,
-                                    const g2o::EdgeSE3::InformationType &info_mat)
+                                    const EdgeType::InformationType &info_mat)
 {
-    if(vi==vj || vi < 0 || vj < 0 || vi>=m_vertices.size() || vj>= m_vertices.size()){
-        logger->logMessage("Index is out of range(GraphSLAM::addEdgeFromVertices)");
-        return false;
-    }
+    DEBUG_MUST_NOT_RUN;
+    return false;
+    //    if(vi==vj || vi < 0 || vj < 0 || vi>=m_vertices.size() || vj>= m_vertices.size()){
+    //        logger->logMessage("Index is out of range(GraphSLAM::addEdgeFromVertices)");
+    //        return false;
+    //    }
 
-    EdgeType * e = GraphHelper::createEdgeSE3FromVertices(m_g2o_graph->edges().size(),
-                                                          m_vertices[vi], m_vertices[vj],
-                                                          info_mat);
-    m_g2o_graph->addEdge(e);
-    if(abs(vi - vj) == 1){
-        m_motion_edges.push_back(e);
-    }else{
-        m_loop_edges.push_back(e);
-    }
+    //    EdgeType * e = GraphHelper::createEdgeSE3FromVertices(m_g2o_graph->edges().size(),
+    //                                                          m_vertices[vi], m_vertices[vj],
+    //                                                          info_mat);
+    //    m_g2o_graph->addEdge(e);
+    //    if(abs(vi - vj) == 1){
+    //        m_motion_edges.push_back(e);
+    //    }else{
+    //        m_loop_edges.push_back(e);
+    //    }
+    //
+    //    return true;
 
-    return true;
 }
 
 bool GraphSLAM::addLoopClosing(const int &vi, const int &vj,
-                               const PosTypes::Pose3D &data, const g2o::EdgeSE3::InformationType &info_mat)
+                               const PosTypes::Pose2D &data, const EdgeType::InformationType &info_mat)
 {
-    EdgeType* e = GraphHelper::createEdgeSE3(m_g2o_graph->edges().size(), m_vertices[vi], m_vertices[vj], data, info_mat);
+    EdgeType* e = GraphHelper::createEdgeSE2(m_g2o_graph->edges().size(), m_vertices[vi], m_vertices[vj], data, info_mat);
     m_g2o_graph->addEdge(e);
     if(abs(vi - vj) == 1){
         throw std::runtime_error("This is not a loop closing edge.");
@@ -227,20 +232,11 @@ bool GraphSLAM::addLoopClosing(const int &vi, const int &vj,
     return true;
 }
 
-void GraphSLAM::removeEdge(const g2o::EdgeSE3 *e)
+void GraphSLAM::removeLoopEdges(const QVector<int> &indices)
 {
-    g2o::EdgeSE3 * ee = const_cast<g2o::EdgeSE3*>(e);
-    m_g2o_graph->removeEdge(ee);
-    m_loop_edges.removeOne(ee);
-    this->sendGraph();
-}
-
-void GraphSLAM::removeEdges(QList<const g2o::EdgeSE3 *> es)
-{
-    for(size_t i=0;i<es.size();i++){
-        g2o::EdgeSE3 * ee = const_cast<g2o::EdgeSE3*>(es[i]);
-        m_g2o_graph->removeEdge(const_cast<g2o::EdgeSE3*>(ee));
-        m_loop_edges.removeOne(ee);
+    for(const auto& i:indices){
+        m_g2o_graph->removeEdge(m_loop_edges[i]);
+        m_loop_edges.removeAt(i);
     }
     this->sendGraph();
 }
@@ -269,7 +265,7 @@ void GraphSLAM::slot_sendGraphDisplay()
     GraphDisplayer::Ptr graph_disp(new GraphDisplayer());
     graph_disp->m_vertices.resize(m_vertices.size());
     for(size_t i=0; i<m_vertices.size();i++){
-        GraphHelper::convertSE3To4x4Matrix(
+        GraphHelper::convertSE2To4x4Matrix(
                     m_vertices[i]->estimate(),
                     &(graph_disp->m_vertices[i].m[0]));
     }
@@ -326,7 +322,7 @@ void GraphSLAM::sendPointCloud()
     cloud_out.resize(m_vertices.size());
     for(size_t i=0; i<m_vertices.size();i++){
         cloud_out[i].reset(new PointCloudDisplayer());
-        GraphHelper::convertSE3ToqglviewerFrame(m_vertices[i]->estimate(), cloud_out[i]->frame);
+        GraphHelper::convertSE2ToqglviewerFrame(m_vertices[i]->estimate(), cloud_out[i]->frame);
         if(m_scan_data[i]){
             cloud_out[i]->fields = {"x","y","z","intensity"};
             cloud_out[i]->start = 0;
@@ -354,7 +350,7 @@ bool GraphSLAM::initialized() const
     return !m_vertices.empty();
 }
 
-g2o::EdgeSE3::Measurement GraphSLAM::getMotionConstraintBetweenVertices(int vi,  int vj)
+GraphSLAM::EdgeType::Measurement GraphSLAM::getMotionConstraintBetweenVertices(int vi,  int vj)
 {
     bool inverse = false;
     if(vi > vj){
@@ -363,8 +359,7 @@ g2o::EdgeSE3::Measurement GraphSLAM::getMotionConstraintBetweenVertices(int vi, 
         vi = vj;
         vj = tmp;
     }
-    g2o::EdgeSE3::Measurement constraint;
-    constraint.setIdentity();
+    EdgeType::Measurement constraint;
     for(int i=vi;i<vj;i++){
         constraint = constraint *  m_motion_edges[i]->measurement();
     }
@@ -373,17 +368,16 @@ g2o::EdgeSE3::Measurement GraphSLAM::getMotionConstraintBetweenVertices(int vi, 
     return constraint;
 }
 
-PointCloudDisplayer::Ptr GraphSLAM::getCompositedPointCloudDisplayer(QVector<int> vertices)
+PointCloudDisplayer::Ptr GraphSLAM::getCompositedPointCloudDisplayer(QVector<int> vertices, bool using_edges)
 {
     PointCloudDisplayer::Ptr cloud(new PointCloudDisplayer());
     cloud->fields = {"x","y","z","intensity"};
     cloud->start = 0;
 
-    GraphHelper::convertSE3ToqglviewerFrame(m_vertices[vertices[0]]->estimate(), cloud->frame);
+    GraphHelper::convertSE2ToqglviewerFrame(m_vertices[vertices[0]]->estimate(), cloud->frame);
 
-    g2o::EdgeSE3::Measurement msr;
+    EdgeType::Measurement msr;
     qglviewer::Frame frame;
-    msr.setIdentity();
 
     PointCloudDisplayer::CloudDataType point;
     point.resize(4);//x,y,z,intensity;
@@ -399,8 +393,11 @@ PointCloudDisplayer::Ptr GraphSLAM::getCompositedPointCloudDisplayer(QVector<int
 
     frame.setReferenceFrame(&origin);
     for(int i=1;i<vertices.size();i++){
-        msr = msr * getMotionConstraintBetweenVertices(vertices[i-1], vertices[i]);
-        GraphHelper::convertEdgeSE3ToqglviewerFrame(msr, frame);
+        if(using_edges)
+            msr = msr * getMotionConstraintBetweenVertices(vertices[i-1], vertices[i]);
+        else
+            msr = msr * (m_vertices[vertices[i-1]]->estimate().inverse()*m_vertices[vertices[i]]->estimate());
+        GraphHelper::convertEdgeSE2ToqglviewerFrame(msr, frame);
         for(const auto p:*(m_scan_data[vertices[i]])){
             qglviewer::Vec pv(p.x, p.y, p.z);
             pv = frame.coordinatesOfIn(pv,&origin);
@@ -417,7 +414,7 @@ void GraphSLAM::getPointCloudDisplayers(const QVector<int> &vertices, QVector<Po
     cloud_out.resize(vertices.size());
     for(size_t i=0; i<vertices.size();i++){
         cloud_out[i].reset(new PointCloudDisplayer());
-        GraphHelper::convertSE3ToqglviewerFrame(m_vertices[vertices[i]]->estimate(), cloud_out[i]->frame);
+        GraphHelper::convertSE2ToqglviewerFrame(m_vertices[vertices[i]]->estimate(), cloud_out[i]->frame);
         if(m_scan_data[vertices[i]]){
             cloud_out[i]->fields = {"x","y","z","intensity"};
             cloud_out[i]->start = 0;
@@ -439,6 +436,13 @@ void GraphSLAM::getPointCloudDisplayers(const QVector<int> &vertices, QVector<Po
     }
 }
 
+void GraphSLAM::removeLastLoopEdge()
+{
+    QVector<int> last_loop;
+    last_loop.push_back(m_loop_edges.size()-1);
+    this->removeLoopEdges(last_loop);
+}
+
 void GraphSLAM::slot_selectVertices(const QList<int> &vertices_id, bool select_edges)
 {
     DEBUG_FUNC_STAMP;
@@ -452,13 +456,13 @@ void GraphSLAM::slot_selectVertices(const QList<int> &vertices_id, bool select_e
 
     if(select_edges){
         //aggregate every edges stemming from selected vertices
-        std::map<g2o::OptimizableGraph::Edge*, int> loop, motion;
+        std::map<g2o::HyperGraph::Edge*, int> loop, motion;
 
         for(const auto& id:vertices_id){
             for(auto e:m_vertices[id]->edges()){
                 if(abs(e->vertex(0)->id() - e->vertex(1)->id()) > 1){
                     //loop closing edge
-                    if(loop.find(e) ==loop.end()){
+                    if(loop.find(e) == loop.end()){
                         loop[e] = 1;
                     }else{
                         loop[e]++;

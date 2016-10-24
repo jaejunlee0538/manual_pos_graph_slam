@@ -26,8 +26,10 @@ GraphTableDialog::GraphTableDialog(QWidget *parent) :
                 ui->widget_MotionEdgeManipulator, SIGNAL(edgesShouldBeModified(EdgeModifications)),
                 this, SLOT(slot_ModifyEdges(EdgeModifications)));
     QObject::connect(
-                ui->widget_LoopEdgesManipulator, SIGNAL(edgesShouldBeRemoved(QList<const g2o::EdgeSE3*>)),
-                this, SLOT(slot_RemoveEdges(QList<const g2o::EdgeSE3*>)));
+                ui->widget_LoopEdgesManipulator, SIGNAL(edgesShouldBeRemoved(QVector<int>)),
+                this, SLOT(slot_RemoveLoopEdges(QVector<int>)));
+    ui->widget_MotionEdgeManipulator->enableEdgeDeletion(false);
+
 #ifdef GRAPH_TABLE_DIALOG_CONSOLE_DEBUG
     DEBUG_MESSAGE_WITH_FUNC_INFO("Construction done.");
 #endif
@@ -81,12 +83,12 @@ void GraphTableDialog::slot_ModifyEdges(const EdgeModifications &modifications)
     Q_EMIT edgesShouldBeModified(modifications);
 }
 
-void GraphTableDialog::slot_RemoveEdges(const QList<const g2o::EdgeSE3 *> &edges_to_remove)
+void GraphTableDialog::slot_RemoveLoopEdges(const QVector<int> &edges_to_remove)
 {
 #ifdef GRAPH_TABLE_DIALOG_CONSOLE_DEBUG
     DEBUG_FUNC_STAMP;
 #endif
-    Q_EMIT edgesShouldBeRemoved(edges_to_remove);
+    Q_EMIT loopEdgesShouldBeRemoved(edges_to_remove);
 }
 
 
