@@ -452,7 +452,7 @@ void GraphSLAM::slot_selectVertices(const QList<int> &vertices_id, bool select_e
 
     if(select_edges){
         //aggregate every edges stemming from selected vertices
-        std::map<g2o::HyperGraph::Edge*, int> loop, motion;
+        std::map<g2o::OptimizableGraph::Edge*, int> loop, motion;
 
         for(const auto& id:vertices_id){
             for(auto e:m_vertices[id]->edges()){
